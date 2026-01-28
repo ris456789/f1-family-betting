@@ -1,0 +1,19 @@
+{
+  "name": "f1-family-betting-backend",
+  "version": "1.0.0",
+  "description": "Backend API for F1 Family Betting App",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "axios": "^1.7.0",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0"
+  }
+}
