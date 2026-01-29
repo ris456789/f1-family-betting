@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useUser } from '../context/UserContext';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import {
+  getRaces,
+  getDrivers,
+  getRaceResult,
+  fetchRaceResultsFromAPI,
+  updateRaceResultManualData,
+  calculateAndSaveScores
+} from '../lib/api';
 
 function Admin() {
   const { currentUser, isHost } = useUser();
-  const navigate = useNavigate();
   const [races, setRaces] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [selectedRace, setSelectedRace] = useState(null);
   const [raceResult, setRaceResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,12 +36,17 @@ function Admin() {
 
   const fetchRaces = async () => {
     try {
-      const response = await axios.get(`${API_URL}/races`);
+      // Get races from local data
+      const raceData = getRaces(2026);
       // Sort by date descending to show most recent first
-      const sortedRaces = response.data.sort((a, b) => {
+      const sortedRaces = [...raceData].sort((a, b) => {
         return new Date(b.date) - new Date(a.date);
       });
       setRaces(sortedRaces);
+
+      // Get drivers for dropdown
+      const driverData = getDrivers();
+      setDrivers(driverData);
     } catch (error) {
       console.error('Error fetching races:', error);
     } finally {
@@ -48,13 +57,17 @@ function Admin() {
   const fetchRaceResult = async (race) => {
     const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
     try {
-      const response = await axios.get(`${API_URL}/results/${raceId}`);
-      setRaceResult(response.data);
-      setManualInputs({
-        safetyCar: response.data.safety_car || false,
-        redFlag: response.data.red_flag || false,
-        driverOfTheDay: response.data.driver_of_the_day || ''
-      });
+      const result = await getRaceResult(raceId);
+      setRaceResult(result);
+      if (result) {
+        setManualInputs({
+          safetyCar: result.safety_car || false,
+          redFlag: result.red_flag || false,
+          driverOfTheDay: result.driver_of_the_day || ''
+        });
+      } else {
+        setManualInputs({ safetyCar: false, redFlag: false, driverOfTheDay: '' });
+      }
     } catch (error) {
       setRaceResult(null);
       setManualInputs({ safetyCar: false, redFlag: false, driverOfTheDay: '' });
@@ -67,23 +80,17 @@ function Admin() {
     setActionLoading(true);
     setMessage(null);
 
-    const raceId = `${new Date(selectedRace.date).getFullYear()}_${selectedRace.round}`;
     const year = new Date(selectedRace.date).getFullYear();
 
     try {
-      const response = await axios.post(`${API_URL}/results/${raceId}/fetch`, {
-        year,
-        round: selectedRace.round,
-        raceName: selectedRace.raceName
-      });
-
-      setRaceResult(response.data);
-      setMessage({ type: 'success', text: 'Race results fetched successfully!' });
+      const result = await fetchRaceResultsFromAPI(year, selectedRace.round, selectedRace.raceName);
+      setRaceResult(result);
+      setMessage({ type: 'success', text: 'Race result record created! Fill in the details below.' });
     } catch (error) {
       console.error('Error fetching results:', error);
       setMessage({
         type: 'error',
-        text: error.response?.data?.error || 'Failed to fetch results'
+        text: error.message || 'Failed to fetch results'
       });
     } finally {
       setActionLoading(false);
@@ -99,7 +106,7 @@ function Admin() {
     const raceId = `${new Date(selectedRace.date).getFullYear()}_${selectedRace.round}`;
 
     try {
-      await axios.put(`${API_URL}/results/${raceId}`, {
+      await updateRaceResultManualData(raceId, {
         safety_car: manualInputs.safetyCar,
         red_flag: manualInputs.redFlag,
         driver_of_the_day: manualInputs.driverOfTheDay || null
@@ -123,15 +130,15 @@ function Admin() {
     const raceId = `${new Date(selectedRace.date).getFullYear()}_${selectedRace.round}`;
 
     try {
-      const response = await axios.post(`${API_URL}/scoring/${raceId}/calculate`);
+      const result = await calculateAndSaveScores(raceId);
       setMessage({
         type: 'success',
-        text: `Scores calculated for ${response.data.scoresCalculated} predictions!`
+        text: `Scores calculated for ${result.scoresCalculated} predictions!`
       });
     } catch (error) {
       setMessage({
         type: 'error',
-        text: error.response?.data?.error || 'Failed to calculate scores'
+        text: error.message || 'Failed to calculate scores'
       });
     } finally {
       setActionLoading(false);
@@ -229,7 +236,7 @@ function Admin() {
                   disabled={actionLoading || !isPastRace(selectedRace)}
                   className="btn-primary w-full mb-4 disabled:opacity-50"
                 >
-                  {actionLoading ? 'Loading...' : 'Fetch Race Results from API'}
+                  {actionLoading ? 'Loading...' : 'Create Race Result Entry'}
                 </button>
 
                 {!isPastRace(selectedRace) && (
@@ -258,7 +265,7 @@ function Admin() {
                     </div>
 
                     <p className="text-xs text-gray-400">
-                      Fetched: {new Date(raceResult.fetched_at).toLocaleString()}
+                      Created: {new Date(raceResult.fetched_at).toLocaleString()}
                     </p>
                   </div>
                 )}
@@ -269,7 +276,7 @@ function Admin() {
                 <div className="card">
                   <h3 className="font-semibold mb-4">Manual Data Entry</h3>
                   <p className="text-sm text-gray-400 mb-4">
-                    Some data can't be fetched automatically. Enter it here:
+                    Enter race data that needs to be filled in manually:
                   </p>
 
                   <div className="space-y-4">
@@ -303,13 +310,18 @@ function Admin() {
 
                     <div>
                       <label className="block text-sm text-gray-400 mb-1">Driver of the Day</label>
-                      <input
-                        type="text"
+                      <select
                         value={manualInputs.driverOfTheDay}
                         onChange={(e) => setManualInputs(p => ({ ...p, driverOfTheDay: e.target.value }))}
-                        placeholder="e.g., verstappen"
-                        className="input w-full"
-                      />
+                        className="select w-full"
+                      >
+                        <option value="">Select driver...</option>
+                        {drivers.map(driver => (
+                          <option key={driver.driverId} value={driver.driverId}>
+                            {driver.name} ({driver.code})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <button

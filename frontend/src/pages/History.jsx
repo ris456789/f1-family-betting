@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useUser } from '../context/UserContext';
 import LeaderboardTable from '../components/LeaderboardTable';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { getCompletedRaces, getRaceLeaderboard } from '../lib/api';
 
 function History() {
   const { currentUser } = useUser();
@@ -26,10 +24,10 @@ function History() {
   const fetchRaces = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/leaderboard/history/races`, { params: { year } });
-      setRaces(response.data);
-      if (response.data.length > 0) {
-        setSelectedRace(response.data[response.data.length - 1].race_id);
+      const data = await getCompletedRaces(year);
+      setRaces(data);
+      if (data.length > 0) {
+        setSelectedRace(data[data.length - 1].race_id);
       }
     } catch (error) {
       console.error('Error fetching races:', error);
@@ -40,8 +38,8 @@ function History() {
 
   const fetchRaceScores = async (raceId) => {
     try {
-      const response = await axios.get(`${API_URL}/leaderboard/${raceId}`);
-      setRaceScores(response.data);
+      const data = await getRaceLeaderboard(raceId);
+      setRaceScores(data);
     } catch (error) {
       console.error('Error fetching race scores:', error);
       setRaceScores([]);

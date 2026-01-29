@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { useUser } from '../context/UserContext';
 import { heroImages, getCircuitImage, getCountryFlag } from '../data/f1Images';
 import { drivers2025 } from '../data/drivers2025';
 import CountdownTimer from '../components/CountdownTimer';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { getNextRace, getLeaderboard } from '../lib/api';
 
 function Home() {
   const { currentUser } = useUser();
@@ -20,12 +18,17 @@ function Home() {
 
   const fetchData = async () => {
     try {
-      const [raceRes, leaderboardRes] = await Promise.all([
-        axios.get(`${API_URL}/races/next`),
-        axios.get(`${API_URL}/leaderboard`)
-      ]);
-      setNextRace(raceRes.data);
-      setLeaderboard(leaderboardRes.data.slice(0, 3));
+      // Get next race from local data
+      const race = getNextRace();
+      setNextRace(race);
+
+      // Get leaderboard from Supabase
+      try {
+        const leaderboardData = await getLeaderboard();
+        setLeaderboard(leaderboardData.slice(0, 3));
+      } catch (e) {
+        console.log('Could not fetch leaderboard:', e.message);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

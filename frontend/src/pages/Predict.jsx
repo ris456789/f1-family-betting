@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useUser } from '../context/UserContext';
 import PredictionForm from '../components/PredictionForm';
 import RaceCard from '../components/RaceCard';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { getRaces, getDrivers, getPredictions, savePrediction } from '../lib/api';
 
 function Predict() {
   const { raceId } = useParams();
@@ -34,27 +32,25 @@ function Predict() {
     try {
       setLoading(true);
 
-      // Fetch race schedule to find the specific race
-      const [scheduleRes, driversRes] = await Promise.all([
-        axios.get(`${API_URL}/races`, { params: { year } }),
-        axios.get(`${API_URL}/races/${round}/drivers`, { params: { year } })
-      ]);
-
-      const raceData = scheduleRes.data.find(r => r.round === parseInt(round));
+      // Get race from local data
+      const races = getRaces(parseInt(year));
+      const raceData = races.find(r => r.round === parseInt(round));
       setRace(raceData);
-      setDrivers(driversRes.data);
 
-      // Check for existing prediction
+      // Get drivers from local data
+      const driversData = getDrivers();
+      setDrivers(driversData);
+
+      // Check for existing prediction in Supabase
       if (currentUser) {
         try {
-          const predRes = await axios.get(`${API_URL}/predictions/${raceId}`, {
-            params: { userId: currentUser.id }
-          });
-          if (predRes.data && predRes.data.length > 0) {
-            setExistingPrediction(predRes.data[0]);
+          const predictions = await getPredictions(raceId, currentUser.id);
+          if (predictions && predictions.length > 0) {
+            setExistingPrediction(predictions[0]);
           }
         } catch (error) {
           // No existing prediction, that's fine
+          console.log('No existing prediction found');
         }
       }
     } catch (error) {
@@ -75,7 +71,7 @@ function Predict() {
     setMessage(null);
 
     try {
-      await axios.post(`${API_URL}/predictions`, {
+      await savePrediction({
         userId: currentUser.id,
         raceId,
         raceYear: parseInt(year),
@@ -86,11 +82,9 @@ function Predict() {
       setMessage({ type: 'success', text: 'Prediction saved successfully!' });
 
       // Refresh existing prediction
-      const predRes = await axios.get(`${API_URL}/predictions/${raceId}`, {
-        params: { userId: currentUser.id }
-      });
-      if (predRes.data && predRes.data.length > 0) {
-        setExistingPrediction(predRes.data[0]);
+      const predictions = await getPredictions(raceId, currentUser.id);
+      if (predictions && predictions.length > 0) {
+        setExistingPrediction(predictions[0]);
       }
     } catch (error) {
       console.error('Error saving prediction:', error);

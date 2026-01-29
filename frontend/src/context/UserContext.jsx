@@ -1,7 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { getUsers, createUser as apiCreateUser } from '../lib/api';
 
 const UserContext = createContext();
 
@@ -28,8 +26,8 @@ export function UserProvider({ children }) {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API_URL}/users`);
-      setUsers(response.data);
+      const data = await getUsers();
+      setUsers(data);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -49,9 +47,9 @@ export function UserProvider({ children }) {
 
   const createUser = async (name, emoji = '👤', is_host = false) => {
     try {
-      const response = await axios.post(`${API_URL}/users`, { name, emoji, is_host });
-      setUsers([...users, response.data]);
-      return response.data;
+      const newUser = await apiCreateUser(name, emoji, is_host);
+      setUsers([...users, newUser]);
+      return newUser;
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
