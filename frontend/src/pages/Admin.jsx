@@ -45,6 +45,8 @@ function Admin() {
   const [selectedParticipant, setSelectedParticipant] = useState('');
   const [editingEmail, setEditingEmail] = useState(false);
   const [participantEmail, setParticipantEmail] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [participantName, setParticipantName] = useState('');
   const [participantMessage, setParticipantMessage] = useState(null);
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
   const [newPin, setNewPin] = useState('');
@@ -256,7 +258,9 @@ function Admin() {
     setSelectedParticipant(userId);
     const user = users.find(u => u.id === userId);
     setParticipantEmail(user?.email || '');
+    setParticipantName(user?.name || '');
     setEditingEmail(false);
+    setEditingName(false);
     setParticipantMessage(null);
     setNewPin('');
   };
@@ -599,6 +603,29 @@ function Admin() {
                         {participantMessage.text}
                       </div>
                     )}
+
+                    {/* Name Section */}
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-400 mb-1">Name</p>
+                      {editingName ? (
+                        <form onSubmit={async (e) => { e.preventDefault(); try { await updateUser(selectedParticipant, { name: participantName }); setEditingName(false); setParticipantMessage({ type: 'success', text: 'Name saved!' }); } catch { setParticipantMessage({ type: 'error', text: 'Failed to save name' }); } }} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={participantName}
+                            onChange={(e) => setParticipantName(e.target.value)}
+                            className="input flex-1"
+                            autoFocus
+                          />
+                          <button type="submit" className="btn-primary px-3">Save</button>
+                          <button type="button" onClick={() => setEditingName(false)} className="btn-secondary px-3">Cancel</button>
+                        </form>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <span className="text-white">{selectedParticipantData.name}</span>
+                          <button onClick={() => { setParticipantName(selectedParticipantData.name); setEditingName(true); }} className="text-xs text-f1-red hover:underline">Edit</button>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Email Section */}
                     <div className="mb-4">
