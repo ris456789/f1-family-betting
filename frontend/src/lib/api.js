@@ -9,8 +9,32 @@ import { drivers2025 } from '../data/drivers2025';
 export async function getUsers() {
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select('id, name, emoji, email, notify_qualifying, is_host, has_pin, created_at')
     .order('name');
+
+  if (error) throw error;
+  return data;
+}
+
+export async function verifyPin(userId, pin) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', userId)
+    .eq('pin', pin)
+    .single();
+
+  if (error || !data) return false;
+  return true;
+}
+
+export async function setUserPin(userId, pin) {
+  const { data, error } = await supabase
+    .from('users')
+    .update({ pin: pin || null, has_pin: !!pin })
+    .eq('id', userId)
+    .select('id, name, emoji, email, notify_qualifying, is_host, has_pin, created_at')
+    .single();
 
   if (error) throw error;
   return data;

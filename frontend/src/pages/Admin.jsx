@@ -15,7 +15,8 @@ import {
   calcPot,
   getRaceLeaderboard,
   sendPaymentConfirmationEmail,
-  autoFetchRaceResults
+  autoFetchRaceResults,
+  setUserPin
 } from '../lib/api';
 
 function Admin() {
@@ -46,6 +47,8 @@ function Admin() {
   const [participantEmail, setParticipantEmail] = useState('');
   const [participantMessage, setParticipantMessage] = useState(null);
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [savingPin, setSavingPin] = useState(false);
 
   useEffect(() => {
     fetchRaces();
@@ -255,6 +258,28 @@ function Admin() {
     setParticipantEmail(user?.email || '');
     setEditingEmail(false);
     setParticipantMessage(null);
+    setNewPin('');
+  };
+
+  const handleSetPin = async (e) => {
+    e.preventDefault();
+    if (!selectedParticipant) return;
+    if (newPin && newPin.length !== 4) {
+      setParticipantMessage({ type: 'error', text: 'PIN must be exactly 4 digits' });
+      return;
+    }
+    setSavingPin(true);
+    try {
+      const updated = await setUserPin(selectedParticipant, newPin || null);
+      // Update local users list
+      await updateUser(selectedParticipant, { has_pin: !!newPin });
+      setNewPin('');
+      setParticipantMessage({ type: 'success', text: newPin ? 'PIN set!' : 'PIN removed!' });
+    } catch {
+      setParticipantMessage({ type: 'error', text: 'Failed to set PIN' });
+    } finally {
+      setSavingPin(false);
+    }
   };
 
   const handleSaveParticipantEmail = async (e) => {
@@ -658,6 +683,38 @@ function Admin() {
                           : 'Add an email to enable notifications'}
                       </p>
                     </div>
+
+                    {/* PIN Management */}
+                    <form onSubmit={handleSetPin} className="mb-4">
+                      <p className="text-sm text-gray-400 mb-1">4-Digit PIN</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          value={newPin}
+                          onChange={(e) => setNewPin(e.target.value.slice(0, 4))}
+                          placeholder={selectedParticipantData.has_pin ? '••••' : 'Set PIN'}
+                          className="input flex-1"
+                          min="0"
+                          max="9999"
+                        />
+                        <button type="submit" disabled={savingPin} className="btn-primary px-4 disabled:opacity-50">
+                          {savingPin ? '...' : 'Save'}
+                        </button>
+                        {selectedParticipantData.has_pin && (
+                          <button
+                            type="button"
+                            disabled={savingPin}
+                            onClick={async () => { await setUserPin(selectedParticipant, null); await updateUser(selectedParticipant, { has_pin: false }); setParticipantMessage({ type: 'success', text: 'PIN removed!' }); }}
+                            className="btn-secondary px-3 text-xs disabled:opacity-50"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {selectedParticipantData.has_pin ? '🔒 PIN is set — user must enter it to log in' : 'No PIN — anyone can log in as this user'}
+                      </p>
+                    </form>
 
                     {/* Send Welcome Email */}
                     <button
