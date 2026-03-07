@@ -1,7 +1,12 @@
 import { Resend } from 'resend';
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'F1 Family Betting <onboarding@resend.dev>';
+let _resend = null;
+function getResend() {
+  if (_resend) return _resend;
+  if (process.env.RESEND_API_KEY) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
+const FROM_EMAIL = () => process.env.FROM_EMAIL || 'F1 Family Betting <onboarding@resend.dev>';
 
 // ─────────────────────────────────────────
 // Layout helpers
@@ -106,12 +111,13 @@ function potBadge(prizePool) {
 }
 
 async function send(to, subject, html) {
+  const resend = getResend();
   if (!resend) {
     console.log(`[Email Mock] → ${to} | ${subject}`);
     return { success: true, mock: true };
   }
   try {
-    const { data, error } = await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
+    const { data, error } = await resend.emails.send({ from: FROM_EMAIL(), to, subject, html });
     if (error) {
       console.error(`[Email] Failed → ${to}:`, error);
       return { success: false, error: error.message };
