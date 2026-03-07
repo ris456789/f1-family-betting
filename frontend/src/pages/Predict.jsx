@@ -172,6 +172,7 @@ function Predict() {
 
       {/* Prediction Form */}
       <PredictionForm
+        key={currentUser?.id}
         drivers={drivers}
         initialValues={initialValues}
         onSubmit={handleSubmit}
