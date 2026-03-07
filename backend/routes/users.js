@@ -54,7 +54,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/users - Create a new user
 router.post('/', async (req, res) => {
   try {
-    const { name, emoji, is_host } = req.body;
+    const { name, emoji, email, notify_qualifying, is_host } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
@@ -65,6 +65,8 @@ router.post('/', async (req, res) => {
         id: Date.now().toString(),
         name,
         emoji: emoji || '👤',
+        email: email || null,
+        notify_qualifying: notify_qualifying !== false,
         is_host: is_host || false,
         created_at: new Date().toISOString()
       });
@@ -72,7 +74,13 @@ router.post('/', async (req, res) => {
 
     const { data, error } = await supabase
       .from('users')
-      .insert([{ name, emoji: emoji || '👤', is_host: is_host || false }])
+      .insert([{
+        name,
+        emoji: emoji || '👤',
+        email: email || null,
+        notify_qualifying: notify_qualifying !== false,
+        is_host: is_host || false
+      }])
       .select()
       .single();
 
@@ -87,15 +95,21 @@ router.post('/', async (req, res) => {
 // PUT /api/users/:id - Update a user
 router.put('/:id', async (req, res) => {
   try {
-    const { name, emoji } = req.body;
+    const { name, emoji, email, notify_qualifying } = req.body;
 
     if (!supabase) {
-      return res.json({ id: req.params.id, name, emoji });
+      return res.json({ id: req.params.id, name, emoji, email, notify_qualifying });
     }
+
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (emoji !== undefined) updateData.emoji = emoji;
+    if (email !== undefined) updateData.email = email;
+    if (notify_qualifying !== undefined) updateData.notify_qualifying = notify_qualifying;
 
     const { data, error } = await supabase
       .from('users')
-      .update({ name, emoji })
+      .update(updateData)
       .eq('id', req.params.id)
       .select()
       .single();

@@ -38,44 +38,43 @@ function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = fals
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validation
     const newErrors = {};
-    if (!formData.p1) newErrors.p1 = 'Winner prediction is required';
-    if (!formData.p2) newErrors.p2 = 'P2 prediction is required';
-    if (!formData.p3) newErrors.p3 = 'P3 prediction is required';
-    if (formData.top10.length !== 10) newErrors.top10 = 'Please select exactly 10 drivers';
+    if (formData.top10.length !== 10) newErrors.top10 = 'Please select exactly 10 drivers for your top 10';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    onSubmit(formData);
+    // Derive podium from top 10 positions
+    const submittedData = {
+      ...formData,
+      p1: formData.top10[0] || '',
+      p2: formData.top10[1] || '',
+      p3: formData.top10[2] || '',
+    };
+
+    onSubmit(submittedData);
   };
 
-  const DriverSelect = ({ label, field, excludeIds = [] }) => {
-    const availableDrivers = drivers.filter(d => !excludeIds.includes(d.driverId));
-
-    return (
-      <div>
-        <label className="block text-sm text-gray-400 mb-1">{label}</label>
-        <select
-          value={formData[field]}
-          onChange={(e) => handleChange(field, e.target.value)}
-          className={`select w-full ${errors[field] ? 'border-red-500' : ''}`}
-          disabled={isLocked}
-        >
-          <option value="">Select driver...</option>
-          {availableDrivers.map(driver => (
-            <option key={driver.driverId} value={driver.driverId}>
-              {driver.fullName} ({driver.team})
-            </option>
-          ))}
-        </select>
-        {errors[field] && <p className="text-red-500 text-xs mt-1">{errors[field]}</p>}
-      </div>
-    );
-  };
+  const DriverSelect = ({ label, field }) => (
+    <div>
+      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <select
+        value={formData[field]}
+        onChange={(e) => handleChange(field, e.target.value)}
+        className="select w-full"
+        disabled={isLocked}
+      >
+        <option value="">Select driver...</option>
+        {drivers.map(driver => (
+          <option key={driver.driverId} value={driver.driverId}>
+            #{driver.number} {driver.fullName} — {driver.team}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 
   const Toggle = ({ label, field, description }) => (
     <div className="flex items-center justify-between py-2">
@@ -117,21 +116,11 @@ function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = fals
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Podium Predictions */}
+      {/* Top 10 — positions 1-3 also serve as podium */}
       <div className="card">
-        <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <span className="text-2xl mr-2">🏆</span>
-          Podium Predictions
-        </h3>
-        <div className="grid md:grid-cols-3 gap-4">
-          <DriverSelect label="Winner (P1)" field="p1" excludeIds={[formData.p2, formData.p3].filter(Boolean)} />
-          <DriverSelect label="Second (P2)" field="p2" excludeIds={[formData.p1, formData.p3].filter(Boolean)} />
-          <DriverSelect label="Third (P3)" field="p3" excludeIds={[formData.p1, formData.p2].filter(Boolean)} />
-        </div>
-      </div>
-
-      {/* Top 10 */}
-      <div className="card">
+        <p className="text-xs text-gray-500 mb-3">
+          🏆 Positions 1–3 will automatically count as your podium predictions
+        </p>
         <Top10Picker
           drivers={drivers}
           value={formData.top10}

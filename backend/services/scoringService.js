@@ -2,13 +2,12 @@
  * Points system configuration
  */
 export const POINTS = {
-  EXACT_P1: 25,
-  EXACT_P2: 18,
-  EXACT_P3: 15,
-  FASTEST_LAP: 10,
-  POLE_POSITION: 10,
-  TOP_10_EXACT: 5,
-  TOP_10_IN_LIST: 2,
+  EXACT_PODIUM: 15,      // P1, P2, or P3 — exact position
+  PODIUM_IN_TOP3: 10,    // Picked for podium, in top 3 but wrong spot
+  FASTEST_LAP: 5,
+  POLE_POSITION: 5,
+  TOP_10_EXACT: 5,       // P4–P10 exact position
+  // P4–P10 proximity: max(0, 5 - abs(predicted - actual))
   DNF_CORRECT: 5,
   SAFETY_CAR: 5,
   RED_FLAG: 8,
@@ -39,13 +38,10 @@ function getMarginBracket(seconds) {
  */
 export function calculateScore(prediction, raceResult) {
   const breakdown = {
-    p1: 0,
-    p2: 0,
-    p3: 0,
+    podium: 0,
+    top_10: 0,
     fastestLap: 0,
     polePosition: 0,
-    top10Exact: 0,
-    top10InList: 0,
     dnf: 0,
     safetyCar: 0,
     redFlag: 0,
@@ -54,67 +50,62 @@ export function calculateScore(prediction, raceResult) {
     total: 0
   };
 
-  // P1 (Winner)
-  if (prediction.p1 === raceResult.p1) {
-    breakdown.p1 = POINTS.EXACT_P1;
+  const predTop10 = prediction.top10 || prediction.top_10 || [];
+  const actualTop10 = raceResult.top10 || raceResult.top_10 || [];
+  const actualPodium = actualTop10.slice(0, 3);
+
+  // Positions 1–3: podium scoring
+  for (let i = 0; i < 3; i++) {
+    const driver = predTop10[i];
+    if (!driver) continue;
+    if (actualTop10[i] === driver) {
+      breakdown.podium += POINTS.EXACT_PODIUM;       // Exact podium spot
+    } else if (actualPodium.includes(driver)) {
+      breakdown.podium += POINTS.PODIUM_IN_TOP3;     // In top 3, wrong spot
+    }
   }
 
-  // P2 (Second Place)
-  if (prediction.p2 === raceResult.p2) {
-    breakdown.p2 = POINTS.EXACT_P2;
+  // Positions 4–10: proximity scoring (5 pts exact, -1 per position off, min 0)
+  for (let i = 3; i < 10; i++) {
+    const driver = predTop10[i];
+    if (!driver) continue;
+    const predictedPos = i + 1;
+    const actualIndex = actualTop10.indexOf(driver);
+    if (actualIndex === -1) continue; // Not in top 10
+    const actualPos = actualIndex + 1;
+    const pts = Math.max(0, POINTS.TOP_10_EXACT - Math.abs(predictedPos - actualPos));
+    breakdown.top_10 += pts;
   }
 
-  // P3 (Third Place)
-  if (prediction.p3 === raceResult.p3) {
-    breakdown.p3 = POINTS.EXACT_P3;
-  }
-
-  // Fastest Lap
-  if (prediction.fastestLap === raceResult.fastestLap) {
+  // Fastest Lap: 5 pts
+  if (prediction.fastestLap && prediction.fastestLap === raceResult.fastestLap) {
     breakdown.fastestLap = POINTS.FASTEST_LAP;
   }
 
-  // Pole Position
-  if (prediction.polePosition === raceResult.polePosition) {
+  // Pole Position: 5 pts
+  if (prediction.polePosition && prediction.polePosition === raceResult.polePosition) {
     breakdown.polePosition = POINTS.POLE_POSITION;
   }
-
-  // Top 10 predictions
-  const predictedTop10 = prediction.top10 || [];
-  const actualTop10 = raceResult.top10 || [];
-
-  predictedTop10.forEach((driverId, index) => {
-    if (actualTop10[index] === driverId) {
-      // Exact position match
-      breakdown.top10Exact += POINTS.TOP_10_EXACT;
-    } else if (actualTop10.includes(driverId)) {
-      // Driver in top 10 but wrong position
-      breakdown.top10InList += POINTS.TOP_10_IN_LIST;
-    }
-  });
 
   // DNF predictions
   const predictedDNFs = prediction.dnfDrivers || [];
   const actualDNFs = raceResult.dnfDrivers || [];
-
   predictedDNFs.forEach(driverId => {
-    if (actualDNFs.includes(driverId)) {
-      breakdown.dnf += POINTS.DNF_CORRECT;
-    }
+    if (actualDNFs.includes(driverId)) breakdown.dnf += POINTS.DNF_CORRECT;
   });
 
   // Safety Car
-  if (prediction.safetyCar === raceResult.safetyCar) {
+  if (prediction.safetyCar === true && raceResult.safetyCar === true) {
     breakdown.safetyCar = POINTS.SAFETY_CAR;
   }
 
   // Red Flag
-  if (prediction.redFlag === raceResult.redFlag) {
+  if (prediction.redFlag === true && raceResult.redFlag === true) {
     breakdown.redFlag = POINTS.RED_FLAG;
   }
 
   // Driver of the Day
-  if (prediction.driverOfTheDay === raceResult.driverOfTheDay) {
+  if (prediction.driverOfTheDay && prediction.driverOfTheDay === raceResult.driverOfTheDay) {
     breakdown.dotd = POINTS.DOTD;
   }
 
@@ -126,11 +117,10 @@ export function calculateScore(prediction, raceResult) {
     }
   }
 
-  // Calculate total
-  breakdown.total = Object.values(breakdown).reduce((sum, val) => {
-    if (typeof val === 'number') return sum + val;
-    return sum;
-  }, 0) - breakdown.total; // Subtract total itself since it was initialized to 0
+  // Total
+  breakdown.total = breakdown.podium + breakdown.top_10 + breakdown.fastestLap +
+    breakdown.polePosition + breakdown.dnf + breakdown.safetyCar +
+    breakdown.redFlag + breakdown.dotd + breakdown.winningMargin;
 
   return breakdown;
 }

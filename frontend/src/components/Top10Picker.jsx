@@ -16,6 +16,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+const POSITION_LABELS = { 1: '🥇', 2: '🥈', 3: '🥉' };
+
 function SortableItem({ id, driver, position, onRemove }) {
   const {
     attributes,
@@ -35,29 +37,51 @@ function SortableItem({ id, driver, position, onRemove }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center bg-f1-dark rounded p-2 mb-2 ${
-        isDragging ? 'opacity-50 ring-2 ring-f1-red' : ''
+      className={`flex items-center bg-f1-dark rounded-lg p-2 mb-2 border border-transparent ${
+        isDragging ? 'opacity-50 ring-2 ring-f1-red border-f1-red' : ''
       }`}
     >
-      <span className="w-8 h-8 flex items-center justify-center bg-f1-gray rounded mr-3 font-bold text-f1-red">
-        {position}
+      {/* Position badge */}
+      <span
+        className="w-8 h-8 flex items-center justify-center rounded mr-2 font-bold text-sm flex-shrink-0"
+        style={{ backgroundColor: position <= 3 ? driver?.teamColor + '33' : '#38383F', color: position <= 3 ? driver?.teamColor : '#e10600' }}
+      >
+        {POSITION_LABELS[position] || `P${position}`}
       </span>
+
+      {/* Drag handle + driver info */}
       <div
         {...attributes}
         {...listeners}
-        className="flex-1 flex items-center cursor-grab active:cursor-grabbing"
+        className="flex-1 flex items-center gap-2 cursor-grab active:cursor-grabbing min-w-0"
       >
-        <svg className="w-5 h-5 text-gray-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
-        </svg>
-        <span>{driver.fullName}</span>
-        <span className="ml-2 text-xs text-gray-500">{driver.team}</span>
+        {/* Headshot */}
+        <div
+          className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border-2"
+          style={{ borderColor: driver?.teamColor || '#888', backgroundColor: driver?.teamColor + '22' }}
+        >
+          <img
+            src={driver?.headshot}
+            alt={driver?.fullName}
+            className="w-full h-full object-cover object-top"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.parentElement.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:0.7rem;font-weight:bold;color:white">${driver?.code || '?'}</span>`;
+            }}
+          />
+        </div>
+        {/* Name + team */}
+        <div className="min-w-0">
+          <p className="font-medium text-sm leading-tight truncate">{driver?.fullName}</p>
+          <p className="text-xs text-gray-500 truncate">{driver?.team}</p>
+        </div>
       </div>
+
       <button
         onClick={() => onRemove(id)}
-        className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+        className="p-1 text-gray-500 hover:text-red-500 transition-colors ml-1 flex-shrink-0"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
@@ -165,7 +189,7 @@ function Top10Picker({ drivers, value = [], onChange }) {
             <option value="">Select a driver...</option>
             {availableDrivers.map(driver => (
               <option key={driver.driverId} value={driver.driverId}>
-                {driver.fullName} ({driver.team})
+                #{driver.number} {driver.fullName} — {driver.team}
               </option>
             ))}
           </select>

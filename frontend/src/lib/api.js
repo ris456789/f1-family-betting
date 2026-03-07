@@ -16,10 +16,22 @@ export async function getUsers() {
   return data;
 }
 
-export async function createUser(name, emoji = '👤', is_host = false) {
+export async function createUser(name, emoji = '👤', is_host = false, email = null) {
   const { data, error } = await supabase
     .from('users')
-    .insert([{ name, emoji, is_host }])
+    .insert([{ name, emoji, is_host, email, notify_qualifying: !!email }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateUser(userId, updates) {
+  const { data, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', userId)
     .select()
     .single();
 
@@ -31,32 +43,40 @@ export async function createUser(name, emoji = '👤', is_host = false) {
 // RACES (from local data)
 // ============================================
 
+// Normalize race data to the shape expected by UI components
+function normalizeRace(race) {
+  return {
+    ...race,
+    raceName: race.name,
+    circuitName: race.circuit,
+  };
+}
+
 export function getRaces(year = 2026) {
-  // Use local race data instead of API
-  return races2026.filter(r => {
-    const raceYear = new Date(r.date).getFullYear();
-    return raceYear === parseInt(year);
-  });
+  return races2026
+    .filter(r => new Date(r.date).getFullYear() === parseInt(year))
+    .map(normalizeRace);
 }
 
 export function getNextRace() {
   const now = new Date();
   const upcoming = races2026
-    .filter(r => new Date(r.date) > now)
+    .filter(r => new Date(`${r.date}T${r.time}`) > now)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  return upcoming[0] || null;
+  return upcoming[0] ? normalizeRace(upcoming[0]) : null;
 }
 
 export function getDrivers() {
-  // Return drivers from local data
   return drivers2025.map(d => ({
     driverId: d.driverId,
     code: d.code,
     name: d.name,
+    fullName: d.name,
     team: d.team,
     teamColor: d.teamColor,
-    headshot: d.headshot
+    headshot: d.headshot,
+    number: d.number,
   }));
 }
 
@@ -248,13 +268,11 @@ export async function getCompletedRaces(year = new Date().getFullYear()) {
 // ============================================
 
 const POINTS = {
-  EXACT_P1: 25,
-  EXACT_P2: 18,
-  EXACT_P3: 15,
-  FASTEST_LAP: 10,
-  POLE_POSITION: 10,
+  EXACT_PODIUM: 15,
+  PODIUM_IN_TOP3: 10,
+  FASTEST_LAP: 5,
+  POLE_POSITION: 5,
   TOP_10_EXACT: 5,
-  TOP_10_IN_LIST: 2,
   DNF_CORRECT: 5,
   SAFETY_CAR: 5,
   RED_FLAG: 8,
@@ -275,74 +293,65 @@ export function calculateScore(prediction, result) {
   const breakdown = {};
   let total = 0;
 
-  // Podium predictions
-  if (prediction.p1 === result.p1) {
-    breakdown.p1 = POINTS.EXACT_P1;
-    total += POINTS.EXACT_P1;
-  }
-  if (prediction.p2 === result.p2) {
-    breakdown.p2 = POINTS.EXACT_P2;
-    total += POINTS.EXACT_P2;
-  }
-  if (prediction.p3 === result.p3) {
-    breakdown.p3 = POINTS.EXACT_P3;
-    total += POINTS.EXACT_P3;
-  }
+  const predTop10 = prediction.top_10 || [];
+  const resultTop10 = result.top_10 || [];
+  const resultPodium = resultTop10.slice(0, 3);
 
-  // Fastest lap
+  // Positions 1–3: podium scoring
+  let podiumPoints = 0;
+  for (let i = 0; i < 3; i++) {
+    const driver = predTop10[i];
+    if (!driver) continue;
+    if (resultTop10[i] === driver) {
+      podiumPoints += POINTS.EXACT_PODIUM;
+    } else if (resultPodium.includes(driver)) {
+      podiumPoints += POINTS.PODIUM_IN_TOP3;
+    }
+  }
+  if (podiumPoints > 0) { breakdown.podium = podiumPoints; total += podiumPoints; }
+
+  // Positions 4–10: proximity scoring
+  let top10Points = 0;
+  for (let i = 3; i < 10; i++) {
+    const driver = predTop10[i];
+    if (!driver) continue;
+    const predictedPos = i + 1;
+    const actualIndex = resultTop10.indexOf(driver);
+    if (actualIndex === -1) continue;
+    const actualPos = actualIndex + 1;
+    top10Points += Math.max(0, POINTS.TOP_10_EXACT - Math.abs(predictedPos - actualPos));
+  }
+  if (top10Points > 0) { breakdown.top_10 = top10Points; total += top10Points; }
+
+  // Fastest lap: 5 pts
   if (prediction.fastest_lap && prediction.fastest_lap === result.fastest_lap) {
     breakdown.fastest_lap = POINTS.FASTEST_LAP;
     total += POINTS.FASTEST_LAP;
   }
 
-  // Pole position
+  // Pole position: 5 pts
   if (prediction.pole_position && prediction.pole_position === result.pole_position) {
     breakdown.pole_position = POINTS.POLE_POSITION;
     total += POINTS.POLE_POSITION;
-  }
-
-  // Top 10 predictions
-  const predTop10 = prediction.top_10 || [];
-  const resultTop10 = result.top_10 || [];
-  let top10Points = 0;
-
-  predTop10.forEach((driver, index) => {
-    if (resultTop10[index] === driver) {
-      top10Points += POINTS.TOP_10_EXACT;
-    } else if (resultTop10.includes(driver)) {
-      top10Points += POINTS.TOP_10_IN_LIST;
-    }
-  });
-
-  if (top10Points > 0) {
-    breakdown.top_10 = top10Points;
-    total += top10Points;
   }
 
   // DNF predictions
   const predDnf = prediction.dnf_drivers || [];
   const resultDnf = result.dnf_drivers || [];
   let dnfPoints = 0;
-
   predDnf.forEach(driver => {
-    if (resultDnf.includes(driver)) {
-      dnfPoints += POINTS.DNF_CORRECT;
-    }
+    if (resultDnf.includes(driver)) dnfPoints += POINTS.DNF_CORRECT;
   });
-
-  if (dnfPoints > 0) {
-    breakdown.dnf = dnfPoints;
-    total += dnfPoints;
-  }
+  if (dnfPoints > 0) { breakdown.dnf = dnfPoints; total += dnfPoints; }
 
   // Safety car
-  if (prediction.safety_car === result.safety_car && result.safety_car === true) {
+  if (prediction.safety_car === true && result.safety_car === true) {
     breakdown.safety_car = POINTS.SAFETY_CAR;
     total += POINTS.SAFETY_CAR;
   }
 
   // Red flag
-  if (prediction.red_flag === result.red_flag && result.red_flag === true) {
+  if (prediction.red_flag === true && result.red_flag === true) {
     breakdown.red_flag = POINTS.RED_FLAG;
     total += POINTS.RED_FLAG;
   }
@@ -403,6 +412,131 @@ export async function calculateAndSaveScores(raceId) {
   }
 
   return { scoresCalculated: scores.length, scores };
+}
+
+// ============================================
+// RACE POTS (money tracking)
+// ============================================
+
+const BUY_IN = 10.00;
+const HOST_CUT = 1.00;
+
+export function calcPot(paidCount, winnerCount = 1) {
+  const totalCollected = BUY_IN * paidCount;
+  const hostTotal = HOST_CUT * paidCount;
+  const prizePool = (BUY_IN - HOST_CUT) * paidCount;
+  const prizePerWinner = winnerCount > 0 ? prizePool / winnerCount : 0;
+  return { totalCollected, hostTotal, prizePool, prizePerWinner, BUY_IN, HOST_CUT };
+}
+
+export async function getRacePot(raceId) {
+  const { data, error } = await supabase
+    .from('race_pots')
+    .select('*')
+    .eq('race_id', raceId)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+export async function upsertRacePot(raceId, raceName) {
+  const { data, error } = await supabase
+    .from('race_pots')
+    .upsert({ race_id: raceId, race_name: raceName, buy_in: BUY_IN, host_cut: HOST_CUT },
+      { onConflict: 'race_id', ignoreDuplicates: true })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function togglePlayerPaid(raceId, raceName, userId, currentPaidIds) {
+  const alreadyPaid = currentPaidIds.includes(userId);
+  const newPaidIds = alreadyPaid
+    ? currentPaidIds.filter(id => id !== userId)
+    : [...currentPaidIds, userId];
+
+  const { data, error } = await supabase
+    .from('race_pots')
+    .upsert({
+      race_id: raceId,
+      race_name: raceName,
+      buy_in: BUY_IN,
+      host_cut: HOST_CUT,
+      paid_user_ids: newPaidIds,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'race_id' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function payOutWinners(raceId, winnerUserIds, prizePerWinner) {
+  const { data, error } = await supabase
+    .from('race_pots')
+    .update({
+      winner_user_ids: winnerUserIds,
+      prize_per_winner: prizePerWinner,
+      status: 'paid_out',
+      updated_at: new Date().toISOString()
+    })
+    .eq('race_id', raceId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getSeasonPotSummary(year = new Date().getFullYear()) {
+  const { data, error } = await supabase
+    .from('race_pots')
+    .select('*')
+    .like('race_id', `${year}_%`);
+  if (error) throw error;
+  return data || [];
+}
+
+// ============================================
+// NOTIFICATIONS / EMAIL (calls backend API)
+// ============================================
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+export async function sendTestEmailToUser(email, name) {
+  const res = await fetch(`${API_URL}/api/notifications/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, name })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to send test email');
+  return data;
+}
+
+export async function autoFetchRaceResults(raceId) {
+  const res = await fetch(`${API_URL}/api/results/${raceId}/auto-fetch`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Auto-fetch failed');
+  return data;
+}
+
+export async function sendPaymentConfirmationEmail(email, name, emoji, raceName, prizePool) {
+  const res = await fetch(`${API_URL}/api/notifications/payment-confirmed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, name, emoji, raceName, prizePool })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to send confirmation');
+  return data;
+}
+
+export async function triggerNotificationCheck() {
+  const res = await fetch(`${API_URL}/api/notifications/trigger`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to trigger notifications');
+  return data;
 }
 
 // ============================================

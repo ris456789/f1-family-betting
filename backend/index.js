@@ -8,6 +8,9 @@ import predictionsRoutes from './routes/predictions.js';
 import resultsRoutes from './routes/results.js';
 import scoringRoutes from './routes/scoring.js';
 import leaderboardRoutes from './routes/leaderboard.js';
+import notificationsRoutes from './routes/notifications.js';
+import { startNotificationScheduler } from './services/notificationService.js';
+import { startRaceResultsScheduler } from './services/raceResultsScheduler.js';
 
 dotenv.config();
 
@@ -25,6 +28,7 @@ app.use('/api/predictions', predictionsRoutes);
 app.use('/api/results', resultsRoutes);
 app.use('/api/scoring', scoringRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -33,4 +37,14 @@ app.get('/api/health', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`F1 Betting API running on port ${PORT}`);
+
+  // Start the notification scheduler
+  if (process.env.ENABLE_NOTIFICATIONS !== 'false') {
+    startNotificationScheduler();
+  }
+
+  // Start the race results auto-fetcher
+  if (process.env.ENABLE_AUTO_RESULTS !== 'false') {
+    startRaceResultsScheduler();
+  }
 });

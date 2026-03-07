@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getUsers, createUser as apiCreateUser } from '../lib/api';
+import { getUsers, createUser as apiCreateUser, updateUser as apiUpdateUser } from '../lib/api';
 
 const UserContext = createContext();
 
@@ -45,13 +45,27 @@ export function UserProvider({ children }) {
     localStorage.removeItem('f1betting_userId');
   };
 
-  const createUser = async (name, emoji = '👤', is_host = false) => {
+  const createUser = async (name, emoji = '👤', is_host = false, email = null) => {
     try {
-      const newUser = await apiCreateUser(name, emoji, is_host);
+      const newUser = await apiCreateUser(name, emoji, is_host, email);
       setUsers([...users, newUser]);
       return newUser;
     } catch (error) {
       console.error('Error creating user:', error);
+      throw error;
+    }
+  };
+
+  const updateUser = async (userId, updates) => {
+    try {
+      const updatedUser = await apiUpdateUser(userId, updates);
+      setUsers(users.map(u => u.id === userId ? updatedUser : u));
+      if (currentUser?.id === userId) {
+        setCurrentUser(updatedUser);
+      }
+      return updatedUser;
+    } catch (error) {
+      console.error('Error updating user:', error);
       throw error;
     }
   };
@@ -67,6 +81,7 @@ export function UserProvider({ children }) {
       selectUser,
       clearUser,
       createUser,
+      updateUser,
       refreshUsers: fetchUsers
     }}>
       {children}

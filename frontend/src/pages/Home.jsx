@@ -4,6 +4,7 @@ import { useUser } from '../context/UserContext';
 import { heroImages, getCircuitImage, getCountryFlag } from '../data/f1Images';
 import { drivers2025 } from '../data/drivers2025';
 import CountdownTimer from '../components/CountdownTimer';
+import PotCard from '../components/PotCard';
 import { getNextRace, getLeaderboard } from '../lib/api';
 
 function Home() {
@@ -81,7 +82,7 @@ function Home() {
           <span className="text-xs bg-white/20 px-2 py-1 rounded-full">NEW</span>
         </Link>
         <p className="text-sm text-gray-400 mt-3">
-          Test your prediction skills with past race data!
+          Practice with past race data before the real thing!
         </p>
       </div>
 
@@ -202,6 +203,16 @@ function Home() {
         </div>
       </section>
 
+      {/* Prize Pot */}
+      {nextRace && (
+        <section>
+          <div className="section-header">
+            <span className="section-title">This Race's Pot</span>
+          </div>
+          <PotCard race={nextRace} />
+        </section>
+      )}
+
       {/* Stats Grid */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Leaderboard Preview */}
@@ -277,7 +288,7 @@ function Home() {
               <span className="text-3xl mr-4 group-hover:scale-110 transition-transform">🧪</span>
               <div className="flex-1">
                 <span className="font-semibold block">Mock Trial</span>
-                <span className="text-sm text-gray-400">Practice with 2025 Australian GP</span>
+                <span className="text-sm text-gray-400">Practice with a past race before the real thing</span>
               </div>
               <svg className="w-5 h-5 text-amber-500 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -323,14 +334,14 @@ function Home() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Winner (P1)', points: 25, icon: '🥇' },
-            { label: 'Second (P2)', points: 18, icon: '🥈' },
-            { label: 'Third (P3)', points: 15, icon: '🥉' },
-            { label: 'Fastest Lap', points: 10, icon: '⚡' },
-            { label: 'Pole Position', points: 10, icon: '🏁' },
-            { label: 'Top 10 Exact', points: 5, icon: '🎯' },
+            { label: 'Podium Exact (P1/2/3)', points: 15, icon: '🥇', note: 'per pick' },
+            { label: 'Podium, Wrong Spot', points: 10, icon: '🎖️', note: 'in top 3' },
+            { label: 'P4–P10 Exact', points: 5, icon: '🎯', note: '−1 per pos off' },
+            { label: 'Fastest Lap', points: 5, icon: '⚡' },
+            { label: 'Pole Position', points: 5, icon: '🏁' },
             { label: 'Red Flag', points: 8, icon: '🚩' },
             { label: 'Safety Car', points: 5, icon: '🚗' },
+            { label: 'DNF Correct', points: 5, icon: '💀', note: 'per driver' },
           ].map((item) => (
             <div
               key={item.label}
@@ -340,6 +351,7 @@ function Home() {
               <div>
                 <p className="text-xs text-gray-400">{item.label}</p>
                 <p className="text-xl font-bold text-f1-red">{item.points} pts</p>
+                {item.note && <p className="text-xs text-gray-500">{item.note}</p>}
               </div>
             </div>
           ))}

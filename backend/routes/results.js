@@ -3,6 +3,7 @@ import supabase from '../db/supabase.js';
 import ergastService from '../services/ergastService.js';
 import scrapingService from '../services/scrapingService.js';
 import { transformRaceResults } from '../services/scoringService.js';
+import { triggerResultsFetch } from '../services/raceResultsScheduler.js';
 
 const router = express.Router();
 
@@ -120,6 +121,23 @@ router.post('/:raceId/fetch', async (req, res) => {
   } catch (error) {
     console.error('Error fetching race results:', error);
     res.status(500).json({ error: 'Failed to fetch race results', details: error.message });
+  }
+});
+
+// POST /api/results/:raceId/auto-fetch - Trigger automated fetch + score for a specific race
+router.post('/:raceId/auto-fetch', async (req, res) => {
+  try {
+    const { raceId } = req.params;
+    const [year, round] = raceId.split('_');
+
+    if (!year || !round) {
+      return res.status(400).json({ error: 'Invalid raceId format (expected year_round)' });
+    }
+
+    const result = await triggerResultsFetch(parseInt(year), parseInt(round));
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Auto-fetch failed' });
   }
 });
 

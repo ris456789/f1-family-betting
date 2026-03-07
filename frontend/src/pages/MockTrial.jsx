@@ -58,7 +58,7 @@ function MockTrial() {
 
         <div className="card rounded-t-none text-center py-12">
           <div className="text-6xl mb-6">🏁</div>
-          <h1 className="text-3xl font-bold mb-4">Test Your Prediction Skills</h1>
+          <h1 className="text-3xl font-bold mb-4">Practice Your Predictions</h1>
           <p className="text-gray-400 mb-8 max-w-md mx-auto">
             Practice with the 2025 Australian Grand Prix!
             Your predictions won't be saved - this is just for fun.

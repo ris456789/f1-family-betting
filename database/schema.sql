@@ -5,8 +5,24 @@ CREATE TABLE IF NOT EXISTS users (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   emoji VARCHAR(10) DEFAULT '👤',
+  email TEXT,
+  notify_qualifying BOOLEAN DEFAULT TRUE,
   is_host BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Notification log table (track sent notifications)
+CREATE TABLE IF NOT EXISTS notification_log (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  race_id VARCHAR(50) NOT NULL,
+  notification_type VARCHAR(20) NOT NULL, -- 'qualifying', 'race', 'results'
+  sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  status VARCHAR(20) DEFAULT 'sent', -- 'sent', 'failed'
+  error_message TEXT,
+
+  -- Prevent duplicate notifications
+  UNIQUE(user_id, race_id, notification_type)
 );
 
 -- Predictions table
@@ -122,3 +138,12 @@ CREATE POLICY "Allow public update to race_results" ON race_results FOR UPDATE U
 CREATE POLICY "Allow public read access to scores" ON scores FOR SELECT USING (true);
 CREATE POLICY "Allow public insert to scores" ON scores FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update to scores" ON scores FOR UPDATE USING (true);
+
+-- Notification log policies
+ALTER TABLE notification_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to notification_log" ON notification_log FOR SELECT USING (true);
+CREATE POLICY "Allow public insert to notification_log" ON notification_log FOR INSERT WITH CHECK (true);
+
+-- Index for notification lookups
+CREATE INDEX IF NOT EXISTS idx_notification_log_race ON notification_log(race_id);
+CREATE INDEX IF NOT EXISTS idx_notification_log_user ON notification_log(user_id);
