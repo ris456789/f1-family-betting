@@ -13,13 +13,16 @@ export function UserProvider({ children }) {
     fetchUsers();
   }, []);
 
-  // Load saved user from localStorage
+  // Load saved user from localStorage — skip if they have a PIN (must re-authenticate)
   useEffect(() => {
     const savedUserId = localStorage.getItem('f1betting_userId');
     if (savedUserId && users.length > 0) {
       const user = users.find(u => u.id === savedUserId);
-      if (user) {
+      if (user && !user.has_pin) {
         setCurrentUser(user);
+      } else {
+        // Clear stale session so they must select + enter PIN
+        localStorage.removeItem('f1betting_userId');
       }
     }
   }, [users]);

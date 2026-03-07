@@ -9,11 +9,11 @@ import { drivers2025 } from '../data/drivers2025';
 export async function getUsers() {
   const { data, error } = await supabase
     .from('users')
-    .select('id, name, emoji, email, notify_qualifying, is_host, has_pin, created_at')
+    .select('*')
     .order('name');
 
   if (error) throw error;
-  return data;
+  return data.map(u => ({ ...u, has_pin: u.has_pin ?? false }));
 }
 
 export async function verifyPin(userId, pin) {
