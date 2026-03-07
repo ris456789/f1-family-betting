@@ -1,0 +1,3 @@
+[deploy]
+startCommand = "node backend/index.js"
+healthcheckPath = "/api/health"
