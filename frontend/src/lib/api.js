@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { races2026 } from '../data/races2026';
-import { drivers2025 } from '../data/drivers2025';
+import { drivers2026 } from '../data/drivers2026';
 
 // ============================================
 // USERS
@@ -92,7 +92,7 @@ export function getNextRace() {
 }
 
 export function getDrivers() {
-  return drivers2025.map(d => ({
+  return drivers2026.map(d => ({
     driverId: d.driverId,
     code: d.code,
     name: d.name,

@@ -21,11 +21,11 @@ dotenv.config({ path: join(__dirname, '.env') });
 
 // Startup diagnostics — helps debug Railway env var injection
 console.log('[Startup] Env vars present:', {
-  SUPABASE_URL: !!process.env.SUPABASE_URL,
+  SUPABASE_URL: process.env.SUPABASE_URL ? process.env.SUPABASE_URL.slice(0, 15) + '...' : 'MISSING',
   SUPABASE_ANON_KEY: !!process.env.SUPABASE_ANON_KEY,
-  RESEND_API_KEY: !!process.env.RESEND_API_KEY,
-  FROM_EMAIL: !!process.env.FROM_EMAIL,
-  APP_URL: !!process.env.APP_URL,
+  RESEND_API_KEY: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.slice(0, 5) + '...' : 'MISSING',
+  FROM_EMAIL: process.env.FROM_EMAIL || 'MISSING',
+  APP_URL: process.env.APP_URL || 'MISSING',
   PORT: process.env.PORT || '(default 3001)',
 });
 

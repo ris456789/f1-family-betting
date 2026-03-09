@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getDriverByCode } from '../data/drivers2025';
+import { getDriverByCode } from '../data/drivers2026';
 import { getScoreRating } from '../data/mockRaceData';
 
 function MockResultsView({ results, prediction, actual, onTryAgain, onBackHome }) {

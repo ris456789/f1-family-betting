@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { drivers2025, getDriverByCode } from '../data/drivers2025';
+import { drivers2026, getDriverByCode } from '../data/drivers2026';
 import { mockRaceResults, mockRaceInfo, calculateMockScore, getScoreRating } from '../data/mockRaceData';
 import MockResultsView from '../components/MockResultsView';
 
@@ -281,7 +281,7 @@ function MockTrial() {
 // Driver Select with Headshot
 function DriverSelect({ label, value, onChange, exclude = [] }) {
   const selectedDriver = value ? getDriverByCode(value) : null;
-  const availableDrivers = drivers2025.filter(d => !exclude.includes(d.code));
+  const availableDrivers = drivers2026.filter(d => !exclude.includes(d.code));
 
   return (
     <div>
@@ -331,7 +331,7 @@ function Top10Selector({ value, onChange }) {
     onChange(newValue);
   };
 
-  const availableDrivers = drivers2025.filter(d => !value.includes(d.code));
+  const availableDrivers = drivers2026.filter(d => !value.includes(d.code));
 
   return (
     <div className="space-y-3">
@@ -411,7 +411,7 @@ function Top10Selector({ value, onChange }) {
       {/* Quick fill button */}
       {value.length === 0 && (
         <button
-          onClick={() => onChange(drivers2025.slice(0, 10).map(d => d.code))}
+          onClick={() => onChange(drivers2026.slice(0, 10).map(d => d.code))}
           className="text-sm text-amber-500 hover:text-amber-400"
         >
           Auto-fill with grid order →
@@ -433,7 +433,7 @@ function DNFSelector({ value, onChange, maxSelections }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      {drivers2025.map(driver => {
+      {drivers2026.map(driver => {
         const isSelected = value.includes(driver.code);
         return (
           <button

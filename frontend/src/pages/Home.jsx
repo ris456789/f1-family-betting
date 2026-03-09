@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { heroImages, getCircuitImage, getCountryFlag } from '../data/f1Images';
-import { drivers2025 } from '../data/drivers2025';
+import { drivers2026 } from '../data/drivers2026';
 import CountdownTimer from '../components/CountdownTimer';
 import PotCard from '../components/PotCard';
 import { getNextRace, getLeaderboard } from '../lib/api';
@@ -154,7 +154,7 @@ function Home() {
         </div>
 
         <div className="drivers-carousel">
-          {drivers2025.slice(0, 12).map((driver) => (
+          {drivers2026.slice(0, 12).map((driver) => (
             <div
               key={driver.code}
               className="driver-card"
