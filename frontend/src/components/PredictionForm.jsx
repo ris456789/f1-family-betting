@@ -53,24 +53,86 @@ function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = fals
     onSubmit(submittedData);
   };
 
-  const DriverSelect = ({ label, field }) => (
-    <div>
-      <label className="block text-sm text-gray-400 mb-1">{label}</label>
-      <select
-        value={formData[field]}
-        onChange={(e) => handleChange(field, e.target.value)}
-        className="select w-full"
-        disabled={isLocked}
-      >
-        <option value="">Select driver...</option>
-        {drivers.map(driver => (
-          <option key={driver.driverId} value={driver.driverId}>
-            #{driver.number} {driver.fullName} — {driver.team}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
+  const DriverSelect = ({ label, field }) => {
+    const [open, setOpen] = useState(false);
+    const selected = drivers.find(d => d.driverId === formData[field]);
+    return (
+      <div className="relative">
+        <label className="block text-sm text-gray-400 mb-1">{label}</label>
+        <button
+          type="button"
+          onClick={() => !isLocked && setOpen(o => !o)}
+          disabled={isLocked}
+          className="input w-full flex items-center gap-2 text-left disabled:opacity-50"
+        >
+          {selected ? (
+            <>
+              <div
+                className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border"
+                style={{ borderColor: selected.teamColor || '#888', backgroundColor: (selected.teamColor || '#888') + '22' }}
+              >
+                <img
+                  src={selected.headshot}
+                  alt={selected.fullName}
+                  className="w-full h-full object-cover object-top"
+                  onError={(e) => { e.target.style.display='none'; e.target.parentElement.innerHTML=`<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:0.6rem;font-weight:bold;color:white">${selected.code}</span>`; }}
+                />
+              </div>
+              <span className="flex-1 truncate">{selected.fullName}</span>
+            </>
+          ) : (
+            <span className="text-gray-500 flex-1">Select driver...</span>
+          )}
+          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {open && (
+          <>
+            <div className="absolute z-20 w-full mt-1 bg-f1-gray rounded-lg shadow-xl max-h-60 overflow-y-auto border border-gray-600">
+              <button
+                type="button"
+                onClick={() => { handleChange(field, ''); setOpen(false); }}
+                className="w-full px-3 py-2 text-left text-gray-400 hover:bg-f1-dark text-sm"
+              >
+                — Clear selection
+              </button>
+              {drivers.map(driver => (
+                <button
+                  key={driver.driverId}
+                  type="button"
+                  onClick={() => { handleChange(field, driver.driverId); setOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-f1-dark transition-colors ${formData[field] === driver.driverId ? 'bg-f1-dark' : ''}`}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border"
+                    style={{ borderColor: driver.teamColor || '#888', backgroundColor: (driver.teamColor || '#888') + '22' }}
+                  >
+                    <img
+                      src={driver.headshot}
+                      alt={driver.fullName}
+                      className="w-full h-full object-cover object-top"
+                      onError={(e) => { e.target.style.display='none'; e.target.parentElement.innerHTML=`<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:0.6rem;font-weight:bold;color:white">${driver.code}</span>`; }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium block truncate">{driver.fullName}</span>
+                    <span className="text-xs text-gray-400">{driver.team}</span>
+                  </div>
+                  {formData[field] === driver.driverId && (
+                    <svg className="w-4 h-4 text-f1-red flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          </>
+        )}
+      </div>
+    );
+  };
 
   const Toggle = ({ label, field, description }) => (
     <div className="flex items-center justify-between py-2">

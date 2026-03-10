@@ -25,7 +25,7 @@ function DriverAvatar({ driver, size = 'md', showName = false, showTeam = false 
   }
 
   const teamColor = driverData.teamColor || getTeamColor(driverData.teamId);
-  const hasHeadshot = driverData.headshotUrl && !imageError;
+  const hasHeadshot = (driverData.headshot || driverData.headshotUrl) && !imageError;
 
   const sizeClasses = {
     sm: 'w-6 h-6 text-xs',
@@ -42,7 +42,7 @@ function DriverAvatar({ driver, size = 'md', showName = false, showTeam = false 
       >
         {hasHeadshot ? (
           <img
-            src={driverData.headshotUrl}
+            src={driverData.headshot || driverData.headshotUrl}
             alt={driverData.name || driverData.fullName}
             className="w-full h-full object-cover"
             onError={() => setImageError(true)}

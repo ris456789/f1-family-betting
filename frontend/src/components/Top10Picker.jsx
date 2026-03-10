@@ -172,27 +172,37 @@ function Top10Picker({ drivers, value = [], onChange }) {
         </SortableContext>
       </DndContext>
 
-      {/* Available drivers */}
+      {/* Available drivers — photo grid */}
       {selectedDrivers.length < 10 && (
         <div>
           <p className="text-sm text-gray-400 mb-2">Add driver:</p>
-          <select
-            onChange={(e) => {
-              if (e.target.value) {
-                addDriver(e.target.value);
-                e.target.value = '';
-              }
-            }}
-            className="select w-full"
-            defaultValue=""
-          >
-            <option value="">Select a driver...</option>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {availableDrivers.map(driver => (
-              <option key={driver.driverId} value={driver.driverId}>
-                #{driver.number} {driver.fullName} — {driver.team}
-              </option>
+              <button
+                key={driver.driverId}
+                type="button"
+                onClick={() => addDriver(driver.driverId)}
+                className="flex flex-col items-center p-2 rounded-lg bg-f1-dark hover:bg-gray-700 transition-colors border border-transparent hover:border-gray-500 group"
+              >
+                <div
+                  className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center mb-1 border-2"
+                  style={{ borderColor: driver.teamColor || '#888', backgroundColor: (driver.teamColor || '#888') + '22' }}
+                >
+                  <img
+                    src={driver.headshot}
+                    alt={driver.fullName}
+                    className="w-full h-full object-cover object-top"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = `<span style="font-size:0.75rem;font-weight:bold;color:white">${driver.code}</span>`;
+                    }}
+                  />
+                </div>
+                <span className="text-xs font-semibold text-center leading-tight truncate w-full text-center">{driver.code}</span>
+                <span className="text-xs text-gray-500 truncate w-full text-center" style={{ fontSize: '0.6rem' }}>{driver.team.replace(' Grand Prix', '')}</span>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       )}
 
