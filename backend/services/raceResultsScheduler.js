@@ -6,6 +6,7 @@ import { getAllSupplementaryData } from './scrapingService.js';
 import { transformRaceResults, calculateScore } from './scoringService.js';
 import { sendResultsEmail } from './emailService.js';
 import { races2026 } from '../data/races2026.js';
+import { PARTICIPANT_EMAILS } from '../data/participants.js';
 
 const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
 
@@ -223,14 +224,22 @@ async function calculateAndSaveScores(raceId) {
 
     console.log(`[Scoring] Calculated scores for ${predictions.length} predictions for ${raceId}`);
 
-    // Send results email to all users with email addresses
+    // Send results email to all participants
     try {
-      const { data: users } = await supabase
-        .from('users')
-        .select('id, name, emoji, email')
-        .not('email', 'is', null);
+      let dbUsers = [];
+      if (supabase) {
+        const { data } = await supabase.from('users').select('id, name, emoji, email');
+        dbUsers = data || [];
+      }
 
-      if (users && users.length > 0) {
+      const users = PARTICIPANT_EMAILS.map(email => {
+        const dbUser = dbUsers.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        return dbUser
+          ? { ...dbUser, email }
+          : { id: email, name: email.split('@')[0], emoji: '👤', email };
+      });
+
+      if (users.length > 0) {
         // Build leaderboard from saved scores
         const { data: scores } = await supabase
           .from('scores')

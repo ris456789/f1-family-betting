@@ -3,6 +3,7 @@ import axios from 'axios';
 import supabase from '../db/supabase.js';
 import { sendQualifyingReminder, sendRaceReminder } from './emailService.js';
 import { races2026, formatRace } from '../data/races2026.js';
+import { PARTICIPANT_EMAILS } from '../data/participants.js';
 
 const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
 
@@ -38,14 +39,20 @@ function getRaceTime(race) {
 }
 
 async function getNotifiableUsers() {
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .not('email', 'is', null)
-    .eq('notify_qualifying', true);
-  if (error) { console.error('[Notification] Error fetching users:', error); return []; }
-  return data || [];
+  // Always use the hardcoded participant email list
+  // Enrich with DB user data (name, emoji, id) where available
+  let dbUsers = [];
+  if (supabase) {
+    const { data } = await supabase.from('users').select('*');
+    dbUsers = data || [];
+  }
+
+  return PARTICIPANT_EMAILS.map(email => {
+    const dbUser = dbUsers.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    return dbUser
+      ? { ...dbUser, email }
+      : { id: email, name: email.split('@')[0], emoji: '👤', email, notify_qualifying: true };
+  });
 }
 
 async function wasNotificationSent(userId, raceId, type) {
