@@ -284,7 +284,7 @@ export async function getCompletedRaces(year = new Date().getFullYear()) {
     .order('race_round', { ascending: true });
 
   if (error) throw error;
-  return data;
+  return data.filter(r => r.race_id !== '2026_1');
 }
 
 // ============================================
