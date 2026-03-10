@@ -6,7 +6,6 @@ import Predict from './pages/Predict';
 import Leaderboard from './pages/Leaderboard';
 import History from './pages/History';
 import Admin from './pages/Admin';
-import MockTrial from './pages/MockTrial';
 
 function App() {
   return (
@@ -19,7 +18,6 @@ function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/history" element={<History />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/mock-trial" element={<MockTrial />} />
           </Routes>
         </Layout>
       </Router>
