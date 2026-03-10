@@ -298,8 +298,6 @@ const POINTS = {
   POLE_POSITION: 5,
   TOP_10_EXACT: 5,
   DNF_CORRECT: 5,
-  SAFETY_CAR: 5,
-  RED_FLAG: 8,
   DOTD: 5,
   WINNING_MARGIN: 5
 };
@@ -367,18 +365,6 @@ export function calculateScore(prediction, result) {
     if (resultDnf.includes(driver)) dnfPoints += POINTS.DNF_CORRECT;
   });
   if (dnfPoints > 0) { breakdown.dnf = dnfPoints; total += dnfPoints; }
-
-  // Safety car
-  if (prediction.safety_car === true && result.safety_car === true) {
-    breakdown.safety_car = POINTS.SAFETY_CAR;
-    total += POINTS.SAFETY_CAR;
-  }
-
-  // Red flag
-  if (prediction.red_flag === true && result.red_flag === true) {
-    breakdown.red_flag = POINTS.RED_FLAG;
-    total += POINTS.RED_FLAG;
-  }
 
   // Driver of the Day
   if (prediction.driver_of_the_day && prediction.driver_of_the_day === result.driver_of_the_day) {

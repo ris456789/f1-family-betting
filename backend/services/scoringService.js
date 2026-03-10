@@ -9,8 +9,6 @@ export const POINTS = {
   TOP_10_EXACT: 5,       // P4–P10 exact position
   // P4–P10 proximity: max(0, 5 - abs(predicted - actual))
   DNF_CORRECT: 5,
-  SAFETY_CAR: 5,
-  RED_FLAG: 8,
   DOTD: 5,
   WINNING_MARGIN: 5
 };
@@ -43,8 +41,6 @@ export function calculateScore(prediction, raceResult) {
     fastestLap: 0,
     polePosition: 0,
     dnf: 0,
-    safetyCar: 0,
-    redFlag: 0,
     dotd: 0,
     winningMargin: 0,
     total: 0
@@ -93,16 +89,6 @@ export function calculateScore(prediction, raceResult) {
   predictedDNFs.forEach(driverId => {
     if (actualDNFs.includes(driverId)) breakdown.dnf += POINTS.DNF_CORRECT;
   });
-
-  // Safety Car
-  if (prediction.safetyCar === true && raceResult.safetyCar === true) {
-    breakdown.safetyCar = POINTS.SAFETY_CAR;
-  }
-
-  // Red Flag
-  if (prediction.redFlag === true && raceResult.redFlag === true) {
-    breakdown.redFlag = POINTS.RED_FLAG;
-  }
 
   // Driver of the Day
   if (prediction.driverOfTheDay && prediction.driverOfTheDay === raceResult.driverOfTheDay) {

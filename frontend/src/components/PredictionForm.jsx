@@ -152,26 +152,6 @@ function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = fals
         />
       </div>
 
-      {/* Yes/No Predictions */}
-      <div className="card">
-        <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <span className="text-2xl mr-2">🚩</span>
-          Race Events
-        </h3>
-        <div className="divide-y divide-gray-600">
-          <Toggle
-            label="Safety Car"
-            field="safetyCar"
-            description="Will there be a Safety Car or VSC?"
-          />
-          <Toggle
-            label="Red Flag"
-            field="redFlag"
-            description="Will the race be red-flagged?"
-          />
-        </div>
-      </div>
-
       {/* Submit */}
       <button type="submit" className="btn-primary w-full py-3 text-lg">
         Save Prediction

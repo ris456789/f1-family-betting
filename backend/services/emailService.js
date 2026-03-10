@@ -312,6 +312,65 @@ ${ctaButton('View This Week\'s Predictions →', appUrl)}
 }
 
 // ─────────────────────────────────────────
+// Email 4: Race results notification
+// ─────────────────────────────────────────
+
+export async function sendResultsEmail(user, race, leaderboard) {
+  if (!user.email) return { success: false, error: 'No email address' };
+
+  const appUrl = process.env.APP_URL || 'http://localhost:5173';
+  const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
+
+  // Build leaderboard rows
+  const medals = ['🥇', '🥈', '🥉'];
+  const leaderboardRows = leaderboard.slice(0, 5).map((entry, i) => `
+<tr>
+  <td style="padding:8px 0;font-size:14px;color:#ccc;">${medals[i] || `${i + 1}.`} ${entry.emoji || '👤'} ${entry.user_name}</td>
+  <td align="right" style="padding:8px 0;font-size:14px;font-weight:700;color:#e10600;">${entry.total_points} pts</td>
+</tr>`).join('');
+
+  const userScore = leaderboard.find(e => e.user_id === user.id);
+  const userPosition = userScore ? leaderboard.indexOf(userScore) + 1 : null;
+
+  const body = `
+<p style="margin:0 0 6px 0;font-size:20px;font-weight:700;color:#ffffff;">Results are in, ${user.emoji} ${user.name}! 🏁</p>
+<p style="margin:0 0 28px 0;font-size:15px;color:#aaa;line-height:1.6;">
+  The ${race.raceName} is done. Scores have been calculated — here's how everyone finished.
+</p>
+
+${raceBox(race)}
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+  <tr>
+    <td style="background:#1a1a2e;border-radius:10px;padding:18px 20px;">
+      <p style="margin:0 0 14px 0;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:#888;">Race Leaderboard</p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        ${leaderboardRows}
+      </table>
+    </td>
+  </tr>
+</table>
+
+${userScore ? `
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
+  <tr>
+    <td style="background:${userPosition === 1 ? 'linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,165,0,0.08))' : '#1e1e2e'};border:1px solid ${userPosition === 1 ? 'rgba(255,215,0,0.3)' : '#2a2a3e'};border-radius:10px;padding:16px 20px;text-align:center;">
+      <p style="margin:0 0 4px 0;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#888;">Your result</p>
+      <p style="margin:0;font-size:28px;font-weight:900;color:${userPosition === 1 ? '#ffd700' : '#ffffff'};">${userPosition === 1 ? '🏆 ' : ''}P${userPosition} — ${userScore.total_points} pts</p>
+    </td>
+  </tr>
+</table>` : ''}
+
+${ctaButton('View Full Results →', `${appUrl}/history`)}`;
+
+  return send(
+    user.email,
+    `🏁 ${race.raceName} results are in — check your score!`,
+    layout(body)
+  );
+}
+
+// ─────────────────────────────────────────
 // Test email
 // ─────────────────────────────────────────
 
@@ -365,4 +424,4 @@ export async function sendTestEmail(email, name = 'there') {
   );
 }
 
-export default { sendQualifyingReminder, sendRaceReminder, sendPaymentConfirmation, sendTestEmail };
+export default { sendQualifyingReminder, sendRaceReminder, sendPaymentConfirmation, sendResultsEmail, sendTestEmail };

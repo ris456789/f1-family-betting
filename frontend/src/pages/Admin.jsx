@@ -30,8 +30,6 @@ function Admin() {
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [manualInputs, setManualInputs] = useState({
-    safetyCar: false,
-    redFlag: false,
     driverOfTheDay: ''
   });
   // Pot state
@@ -89,12 +87,10 @@ function Admin() {
       setRaceResult(result);
       if (result) {
         setManualInputs({
-          safetyCar: result.safety_car || false,
-          redFlag: result.red_flag || false,
           driverOfTheDay: result.driver_of_the_day || ''
         });
       } else {
-        setManualInputs({ safetyCar: false, redFlag: false, driverOfTheDay: '' });
+        setManualInputs({ driverOfTheDay: '' });
       }
     } catch (error) {
       setRaceResult(null);
@@ -141,8 +137,6 @@ function Admin() {
 
     try {
       await updateRaceResultManualData(raceId, {
-        safety_car: manualInputs.safetyCar,
-        red_flag: manualInputs.redFlag,
         driver_of_the_day: manualInputs.driverOfTheDay || null
       });
 
@@ -871,34 +865,6 @@ function Admin() {
                   </p>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span>Safety Car</span>
-                      <button
-                        onClick={() => setManualInputs(p => ({ ...p, safetyCar: !p.safetyCar }))}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          manualInputs.safetyCar ? 'bg-f1-red' : 'bg-gray-600'
-                        }`}
-                      >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          manualInputs.safetyCar ? 'translate-x-6' : 'translate-x-1'
-                        }`} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span>Red Flag</span>
-                      <button
-                        onClick={() => setManualInputs(p => ({ ...p, redFlag: !p.redFlag }))}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          manualInputs.redFlag ? 'bg-f1-red' : 'bg-gray-600'
-                        }`}
-                      >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          manualInputs.redFlag ? 'translate-x-6' : 'translate-x-1'
-                        }`} />
-                      </button>
-                    </div>
-
                     <div>
                       <label className="block text-sm text-gray-400 mb-1">Driver of the Day</label>
                       <select

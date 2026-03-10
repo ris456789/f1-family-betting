@@ -4,6 +4,7 @@ import supabase from '../db/supabase.js';
 import { getRaceResults } from './f1DataService.js';
 import { getAllSupplementaryData } from './scrapingService.js';
 import { transformRaceResults, calculateScore } from './scoringService.js';
+import { sendResultsEmail } from './emailService.js';
 import { races2026 } from '../data/races2026.js';
 
 const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
@@ -221,6 +222,44 @@ async function calculateAndSaveScores(raceId) {
     }
 
     console.log(`[Scoring] Calculated scores for ${predictions.length} predictions for ${raceId}`);
+
+    // Send results email to all users with email addresses
+    try {
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, name, emoji, email')
+        .not('email', 'is', null);
+
+      if (users && users.length > 0) {
+        // Build leaderboard from saved scores
+        const { data: scores } = await supabase
+          .from('scores')
+          .select('user_id, total_points, users(id, name, emoji)')
+          .eq('race_id', raceId)
+          .order('total_points', { ascending: false });
+
+        const leaderboard = (scores || []).map((s, i) => ({
+          user_id: s.user_id,
+          user_name: s.users?.name || 'Unknown',
+          emoji: s.users?.emoji || '👤',
+          total_points: s.total_points
+        }));
+
+        const race = races2026.find(r => `2026_${r.round}` === raceId);
+        if (race) {
+          const raceForEmail = { ...race, raceName: race.name, circuitName: race.circuit };
+          for (const user of users) {
+            await sendResultsEmail(user, raceForEmail, leaderboard).catch(e =>
+              console.warn(`[Results Email] Failed for ${user.email}:`, e.message)
+            );
+          }
+          console.log(`[Results Email] Sent to ${users.length} user(s) for ${race.name}`);
+        }
+      }
+    } catch (emailErr) {
+      console.warn('[Results Email] Error sending results emails:', emailErr.message);
+    }
+
     return predictions.length;
   } catch (err) {
     console.error(`[Scoring] Error for ${raceId}:`, err.message);
