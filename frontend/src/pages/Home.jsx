@@ -72,18 +72,6 @@ function Home() {
             : 'Select a player above to get started'}
         </p>
 
-        {/* Mock Trial Button */}
-        <Link
-          to="/mock-trial"
-          className="inline-flex items-center gap-3 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:via-orange-600 hover:to-amber-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all transform hover:scale-105 shadow-xl hover:shadow-orange-500/30"
-        >
-          <span className="text-2xl">🏁</span>
-          <span>Try Mock Trial</span>
-          <span className="text-xs bg-white/20 px-2 py-1 rounded-full">NEW</span>
-        </Link>
-        <p className="text-sm text-gray-400 mt-3">
-          Practice with past race data before the real thing!
-        </p>
       </div>
 
       {/* Next Race Card */}
@@ -281,19 +269,6 @@ function Home() {
               </Link>
             )}
 
-            <Link
-              to="/mock-trial"
-              className="flex items-center p-4 bg-gradient-to-r from-amber-500/20 to-transparent rounded-lg hover:from-amber-500/30 transition-all group"
-            >
-              <span className="text-3xl mr-4 group-hover:scale-110 transition-transform">🧪</span>
-              <div className="flex-1">
-                <span className="font-semibold block">Mock Trial</span>
-                <span className="text-sm text-gray-400">Practice with a past race before the real thing</span>
-              </div>
-              <svg className="w-5 h-5 text-amber-500 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
 
             <Link
               to="/history"
