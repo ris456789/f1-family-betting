@@ -261,6 +261,7 @@ async function calculateAndSaveScores(raceId) {
             await sendResultsEmail(user, raceForEmail, leaderboard).catch(e =>
               console.warn(`[Results Email] Failed for ${user.email}:`, e.message)
             );
+            await new Promise(r => setTimeout(r, 600)); // Resend rate limit: 2 req/sec
           }
           console.log(`[Results Email] Sent to ${users.length} user(s) for ${race.name}`);
         }

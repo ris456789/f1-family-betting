@@ -127,6 +127,7 @@ async function checkQualifyingReminders() {
       const result = await sendQualifyingReminder(user, formatted);
       await logNotification(user.id, raceId, 'qualifying',
         result.success ? 'sent' : 'failed', result.error);
+      await new Promise(r => setTimeout(r, 600)); // Resend rate limit: 2 req/sec
     }
   }
 }
@@ -161,6 +162,7 @@ async function checkRaceReminders() {
       const result = await sendRaceReminder(user, formatted, potPaidCount);
       await logNotification(user.id, raceId, 'race_day',
         result.success ? 'sent' : 'failed', result.error);
+      await new Promise(r => setTimeout(r, 600)); // Resend rate limit: 2 req/sec
     }
   }
 }
