@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import Top10Picker from './Top10Picker';
 import DriverMultiSelect from './DriverMultiSelect';
 
-const MARGIN_BRACKETS = ['0-5s', '5-10s', '10-20s', '20-30s', '30s+'];
-
 function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = false }) {
   const [formData, setFormData] = useState({
     p1: '',
@@ -11,12 +9,10 @@ function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = fals
     p3: '',
     top10: [],
     fastestLap: '',
-    polePosition: '',
     dnfDrivers: [],
     safetyCar: false,
     redFlag: false,
     driverOfTheDay: '',
-    winningMarginBracket: '',
     ...initialValues
   });
 
@@ -137,21 +133,7 @@ function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = fals
         </h3>
         <div className="grid md:grid-cols-2 gap-4">
           <DriverSelect label="Fastest Lap" field="fastestLap" />
-          <DriverSelect label="Pole Position" field="polePosition" />
           <DriverSelect label="Driver of the Day" field="driverOfTheDay" />
-          <div>
-            <label className="block text-sm text-gray-400 mb-1">Winning Margin</label>
-            <select
-              value={formData.winningMarginBracket}
-              onChange={(e) => handleChange('winningMarginBracket', e.target.value)}
-              className="select w-full"
-            >
-              <option value="">Select bracket...</option>
-              {MARGIN_BRACKETS.map(bracket => (
-                <option key={bracket} value={bracket}>{bracket}</option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 

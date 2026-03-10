@@ -230,9 +230,9 @@ export async function getLeaderboard(year = new Date().getFullYear()) {
 
   if (error) throw error;
 
-  // Aggregate scores by user
+  // Aggregate scores by user, excluding the trial first race
   const userScores = {};
-  scores.forEach(score => {
+  scores.filter(score => score.race_id !== '2026_1').forEach(score => {
     const userId = score.user_id;
     if (!userScores[userId]) {
       userScores[userId] = {
