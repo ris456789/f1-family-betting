@@ -6,6 +6,7 @@ import Predict from './pages/Predict';
 import Leaderboard from './pages/Leaderboard';
 import History from './pages/History';
 import Admin from './pages/Admin';
+import ViewPredictions from './pages/ViewPredictions';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/predict/:raceId" element={<Predict />} />
+            <Route path="/predictions" element={<ViewPredictions />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/history" element={<History />} />
             <Route path="/admin" element={<Admin />} />

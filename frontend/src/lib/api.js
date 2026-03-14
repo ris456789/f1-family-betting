@@ -111,7 +111,7 @@ export function getDrivers() {
 export async function getPredictions(raceId, userId = null) {
   let query = supabase
     .from('predictions')
-    .select('*')
+    .select('*, users(name, emoji)')
     .eq('race_id', raceId);
 
   if (userId) {
