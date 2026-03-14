@@ -1,7 +1,7 @@
 // 2026 F1 Race Calendar
 export const races2026 = [
   { round: 1,  name: "Australian Grand Prix",      circuit: "Albert Park Circuit",             country: "Australia",    locality: "Melbourne",      date: "2026-03-08", time: "04:00:00Z", qualifyingDate: "2026-03-07", qualifyingTime: "19:00:00Z" },
-  { round: 2,  name: "Chinese Grand Prix",          circuit: "Shanghai International Circuit",  country: "China",        locality: "Shanghai",       date: "2026-03-22", time: "07:00:00Z", qualifyingDate: "2026-03-21", qualifyingTime: "07:00:00Z" },
+  { round: 2,  name: "Chinese Grand Prix",          circuit: "Shanghai International Circuit",  country: "China",        locality: "Shanghai",       date: "2026-03-22", time: "07:00:00Z", qualifyingDate: "2026-03-14", qualifyingTime: "08:00:00Z" },
   { round: 3,  name: "Japanese Grand Prix",         circuit: "Suzuka International Circuit",    country: "Japan",        locality: "Suzuka",         date: "2026-04-05", time: "05:00:00Z", qualifyingDate: "2026-04-04", qualifyingTime: "05:00:00Z" },
   { round: 4,  name: "Bahrain Grand Prix",          circuit: "Bahrain International Circuit",   country: "Bahrain",      locality: "Sakhir",         date: "2026-04-19", time: "15:00:00Z", qualifyingDate: "2026-04-18", qualifyingTime: "15:00:00Z" },
   { round: 5,  name: "Saudi Arabian Grand Prix",    circuit: "Jeddah Corniche Circuit",         country: "Saudi Arabia", locality: "Jeddah",         date: "2026-05-03", time: "17:00:00Z", qualifyingDate: "2026-05-02", qualifyingTime: "17:00:00Z" },
