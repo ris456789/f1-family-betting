@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { getTeamColor, getDriverByCode } from '../data/drivers2026';
+import { getTeamColor, getDriverByCode, getAllDrivers } from '../data/drivers2026';
 
 function DriverAvatar({ driver, size = 'md', showName = false, showTeam = false }) {
   const [imageError, setImageError] = useState(false);
 
   // Handle both driver object and driver code string
-  const driverData = typeof driver === 'string' ? getDriverByCode(driver) : driver;
+  // Try by 3-letter code first, then fall back to driverId
+  const driverData = typeof driver === 'string'
+    ? getDriverByCode(driver) || getAllDrivers().find(d => d.driverId === driver)
+    : driver;
 
   if (!driverData) {
     return (
