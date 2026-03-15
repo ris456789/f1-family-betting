@@ -127,6 +127,7 @@ function Layout({ children }) {
   const navItems = [
     { path: '/', label: 'Home' },
     { path: '/predictions', label: 'Predictions' },
+    { path: '/analysis', label: 'Analysis' },
     { path: '/leaderboard', label: 'Leaderboard' },
     { path: '/history', label: 'History' },
     ...(isHost ? [{ path: '/admin', label: 'Admin' }] : [])

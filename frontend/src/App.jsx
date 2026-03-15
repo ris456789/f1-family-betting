@@ -7,6 +7,7 @@ import Leaderboard from './pages/Leaderboard';
 import History from './pages/History';
 import Admin from './pages/Admin';
 import ViewPredictions from './pages/ViewPredictions';
+import RaceAnalysis from './pages/RaceAnalysis';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/predict/:raceId" element={<Predict />} />
             <Route path="/predictions" element={<ViewPredictions />} />
+            <Route path="/analysis" element={<RaceAnalysis />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/history" element={<History />} />
             <Route path="/admin" element={<Admin />} />

@@ -276,6 +276,28 @@ export async function getRaceLeaderboard(raceId) {
   }));
 }
 
+export async function getRaceAnalysis(raceId) {
+  const [resultRes, predsRes, scoresRes] = await Promise.all([
+    supabase.from('race_results').select('*').eq('race_id', raceId).single(),
+    supabase.from('predictions').select('*, users(name, emoji)').eq('race_id', raceId),
+    supabase.from('scores').select('user_id, total_points, points_breakdown').eq('race_id', raceId)
+  ]);
+
+  if (resultRes.error && resultRes.error.code !== 'PGRST116') throw resultRes.error;
+  if (predsRes.error) throw predsRes.error;
+  if (scoresRes.error) throw scoresRes.error;
+
+  const scoresByUser = Object.fromEntries(
+    (scoresRes.data || []).map(s => [s.user_id, s])
+  );
+
+  const players = (predsRes.data || [])
+    .map(pred => ({ ...pred, score: scoresByUser[pred.user_id] || null }))
+    .sort((a, b) => (b.score?.total_points ?? -1) - (a.score?.total_points ?? -1));
+
+  return { result: resultRes.data || null, players };
+}
+
 export async function getCompletedRaces(year = new Date().getFullYear()) {
   const { data, error } = await supabase
     .from('race_results')
@@ -302,7 +324,7 @@ const POINTS = {
   WINNING_MARGIN: 5
 };
 
-function getWinningMarginBracket(seconds) {
+export function getWinningMarginBracket(seconds) {
   if (seconds === null || seconds === undefined) return null;
   if (seconds <= 5) return '0-5s';
   if (seconds <= 10) return '5-10s';
