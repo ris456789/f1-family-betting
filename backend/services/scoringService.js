@@ -10,7 +10,9 @@ export const POINTS = {
   // P4–P10 proximity: max(0, 5 - abs(predicted - actual))
   DNF_CORRECT: 5,
   DOTD: 5,
-  WINNING_MARGIN: 5
+  WINNING_MARGIN: 5,
+  SAFETY_CAR: 5,
+  RED_FLAG: 8
 };
 
 /**
@@ -41,6 +43,8 @@ export function calculateScore(prediction, raceResult) {
     fastestLap: 0,
     polePosition: 0,
     dnf: 0,
+    safetyCar: 0,
+    redFlag: 0,
     dotd: 0,
     winningMargin: 0,
     total: 0
@@ -100,6 +104,20 @@ export function calculateScore(prediction, raceResult) {
     const actualBracket = getMarginBracket(raceResult.winningMargin);
     if (actualBracket && prediction.winningMarginBracket === actualBracket.label) {
       breakdown.winningMargin = POINTS.WINNING_MARGIN;
+    }
+  }
+
+  // Safety Car
+  if (raceResult.safetyCar !== null && raceResult.safetyCar !== undefined) {
+    if (!!prediction.safetyCar === !!raceResult.safetyCar) {
+      breakdown.safetyCar = POINTS.SAFETY_CAR;
+    }
+  }
+
+  // Red Flag
+  if (raceResult.redFlag !== null && raceResult.redFlag !== undefined) {
+    if (!!prediction.redFlag === !!raceResult.redFlag) {
+      breakdown.redFlag = POINTS.RED_FLAG;
     }
   }
 
