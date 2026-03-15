@@ -184,15 +184,15 @@ export function transformRaceResults(ergastResults, supplementaryData = {}) {
     'Hydraulics', 'Electrical', 'Suspension', 'Brakes', 'Puncture',
     'Did not finish', 'DNF', 'DNS', 'Disqualified'];
 
-  const top10 = ergastResults
-    .filter(r => r.position <= 10)
-    .sort((a, b) => a.position - b.position)
-    .map(r => r.driverId);
+  const isDNF = r => dnfStatuses.some(s => r.status.toLowerCase().includes(s.toLowerCase()));
 
-  const dnfDrivers = ergastResults
-    .filter(r => dnfStatuses.some(status =>
-      r.status.toLowerCase().includes(status.toLowerCase())
-    ))
+  const dnfDrivers = ergastResults.filter(isDNF).map(r => r.driverId);
+
+  // Exclude DNF drivers from top 10 — a retired driver's last position
+  // is not their official finishing position
+  const top10 = ergastResults
+    .filter(r => r.position <= 10 && !isDNF(r))
+    .sort((a, b) => a.position - b.position)
     .map(r => r.driverId);
 
   const fastestLapDriver = ergastResults.find(r => r.fastestLap)?.driverId || null;

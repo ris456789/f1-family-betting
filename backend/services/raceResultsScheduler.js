@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import axios from 'axios';
 import supabase from '../db/supabase.js';
-import { getRaceResults } from './f1DataService.js';
+import { getRaceResults, getOfficialResults } from './f1DataService.js';
 import { getAllSupplementaryData } from './scrapingService.js';
 import { transformRaceResults, calculateScore } from './scoringService.js';
 import { sendResultsEmail } from './emailService.js';
@@ -72,34 +72,45 @@ async function fetchAndSaveRaceResults(race) {
   console.log(`[ResultsFetcher] Attempting to fetch results for ${race.name}...`);
 
   try {
-    const rawResults = await getRaceResults(year, race.round);
+    // Try Jolpi.ca (Ergast mirror) first — gives official classification + proper DNF status
+    let rawResults = await getOfficialResults(year, race.round);
+    let source = 'jolpi';
+
+    if (!rawResults || rawResults.length < 5) {
+      console.log(`[ResultsFetcher] Jolpi not ready for ${race.name}, falling back to OpenF1...`);
+      rawResults = await getRaceResults(year, race.round);
+      source = 'openf1';
+    }
 
     if (!rawResults || rawResults.length < 5) {
       console.log(`[ResultsFetcher] Results not available yet for ${race.name} (got ${rawResults?.length ?? 0} entries)`);
       return false;
     }
 
-    // Enhance DNF list using race control messages
-    const sessionKey = await getRaceSessionKey(year, race.date);
-    if (sessionKey) {
-      const dnfNumbers = await getDNFDriverNumbers(sessionKey);
-      if (dnfNumbers.length > 0) {
-        // Map driver numbers → driverIds via OpenF1 drivers endpoint
-        try {
-          const driversRes = await axios.get(`${OPENF1_BASE_URL}/drivers`, {
-            params: { session_key: sessionKey },
-            timeout: 10000
-          });
-          const sessionDrivers = driversRes.data;
-          dnfNumbers.forEach(num => {
-            const d = sessionDrivers.find(sd => sd.driver_number === num);
-            if (d) {
-              const r = rawResults.find(r => r.driverCode === d.name_acronym);
-              if (r) r.status = 'Retired';
-            }
-          });
-        } catch (e) {
-          console.warn('[ResultsFetcher] Could not map DNF driver numbers:', e.message);
+    console.log(`[ResultsFetcher] Using ${source} data for ${race.name} (${rawResults.length} drivers)`);
+
+    // If using OpenF1 fallback, enhance DNF list via race control messages
+    if (source === 'openf1') {
+      const sessionKey = await getRaceSessionKey(year, race.date);
+      if (sessionKey) {
+        const dnfNumbers = await getDNFDriverNumbers(sessionKey);
+        if (dnfNumbers.length > 0) {
+          try {
+            const driversRes = await axios.get(`${OPENF1_BASE_URL}/drivers`, {
+              params: { session_key: sessionKey },
+              timeout: 10000
+            });
+            const sessionDrivers = driversRes.data;
+            dnfNumbers.forEach(num => {
+              const d = sessionDrivers.find(sd => sd.driver_number === num);
+              if (d) {
+                const r = rawResults.find(r => r.driverCode === d.name_acronym);
+                if (r) r.status = 'Retired';
+              }
+            });
+          } catch (e) {
+            console.warn('[ResultsFetcher] Could not map DNF driver numbers:', e.message);
+          }
         }
       }
     }

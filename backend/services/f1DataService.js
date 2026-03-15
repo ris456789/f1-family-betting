@@ -278,6 +278,52 @@ export async function getQualifyingResults(year, round) {
   }
 }
 
+/**
+ * Fetch official race results from Jolpi.ca (Ergast community mirror)
+ * Returns full classification with proper DNF status for each driver.
+ * Falls back to null if data isn't available yet (race too recent).
+ */
+export async function getOfficialResults(year, round) {
+  try {
+    const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/results.json`;
+    const response = await axios.get(url, { timeout: 10000 });
+    const races = response.data?.MRData?.RaceTable?.Races;
+    if (!races || races.length === 0) return null;
+
+    const race = races[0];
+    const results = race.Results || [];
+    if (results.length === 0) return null;
+
+    return results.map(r => {
+      // Map Jolpi driverId to our 2026 driverId
+      const jolpiId = r.Driver?.driverId || '';
+      const driver2026 = drivers2026.find(d =>
+        d.driverId === jolpiId ||
+        d.code === r.Driver?.code ||
+        d.name?.toLowerCase().includes((r.Driver?.familyName || '').toLowerCase())
+      );
+
+      return {
+        position: parseInt(r.position) || 99,
+        driverId: driver2026?.driverId || jolpiId,
+        driverCode: r.Driver?.code || driver2026?.code || '',
+        driverName: `${r.Driver?.givenName || ''} ${r.Driver?.familyName || ''}`.trim(),
+        team: r.Constructor?.name || driver2026?.team || 'Unknown',
+        grid: parseInt(r.grid) || 0,
+        laps: parseInt(r.laps) || 0,
+        status: r.status || 'Finished',
+        time: r.Time?.time || r.status || null,
+        fastestLap: r.FastestLap?.rank === '1',
+        fastestLapTime: r.FastestLap?.Time?.time || null,
+        points: parseFloat(r.points) || 0
+      };
+    });
+  } catch (error) {
+    console.warn('[Jolpi] Could not fetch official results:', error.message);
+    return null;
+  }
+}
+
 export default {
   getRaceSchedule,
   getUpcomingRaces,
@@ -285,5 +331,6 @@ export default {
   getDrivers,
   getDriversWithTeams,
   getRaceResults,
-  getQualifyingResults
+  getQualifyingResults,
+  getOfficialResults
 };
