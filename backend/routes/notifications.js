@@ -1,6 +1,9 @@
 import express from 'express';
-import { sendTestEmail, sendPaymentConfirmation } from '../services/emailService.js';
+import { sendTestEmail, sendPaymentConfirmation, sendResultsEmail } from '../services/emailService.js';
 import { triggerNotificationCheck, getNotificationStatus } from '../services/notificationService.js';
+import supabase from '../db/supabase.js';
+import { races2026 } from '../data/races2026.js';
+import { PARTICIPANT_EMAILS } from '../data/participants.js';
 
 const router = express.Router();
 
@@ -53,6 +56,69 @@ router.post('/trigger', async (req, res) => {
   } catch (error) {
     console.error('Error triggering notifications:', error);
     res.status(500).json({ error: 'Failed to trigger notifications' });
+  }
+});
+
+// POST /api/notifications/resend-results/:raceId - Resend results emails for a race
+router.post('/resend-results/:raceId', async (req, res) => {
+  try {
+    const { raceId } = req.params;
+    const [yearStr, roundStr] = raceId.split('_');
+
+    if (!supabase) {
+      return res.status(400).json({ error: 'Supabase not configured' });
+    }
+
+    // Get scores for this race
+    const { data: scores, error: scoresErr } = await supabase
+      .from('scores')
+      .select('user_id, total_points, users(id, name, emoji)')
+      .eq('race_id', raceId)
+      .order('total_points', { ascending: false });
+
+    if (scoresErr) throw scoresErr;
+    if (!scores || scores.length === 0) {
+      return res.status(404).json({ error: 'No scores found for this race. Calculate scores first.' });
+    }
+
+    const leaderboard = scores.map(s => ({
+      user_id: s.user_id,
+      user_name: s.users?.name || 'Unknown',
+      emoji: s.users?.emoji || '👤',
+      total_points: s.total_points
+    }));
+
+    // Get users with emails
+    const { data: dbUsers } = await supabase.from('users').select('id, name, emoji, email');
+    const users = (PARTICIPANT_EMAILS || []).map(email => {
+      const dbUser = (dbUsers || []).find(u => u.email?.toLowerCase() === email.toLowerCase());
+      return dbUser ? { ...dbUser, email } : { id: email, name: email.split('@')[0], emoji: '👤', email };
+    }).filter(u => u.email);
+
+    if (users.length === 0) {
+      return res.status(400).json({ error: 'No users with emails found' });
+    }
+
+    // Find race info
+    const race = races2026.find(r => `2026_${r.round}` === raceId);
+    if (!race) {
+      return res.status(404).json({ error: `Race ${raceId} not found` });
+    }
+    const raceForEmail = { ...race, raceName: race.name, circuitName: race.circuit };
+
+    let sent = 0;
+    let failed = 0;
+    for (const user of users) {
+      const result = await sendResultsEmail(user, raceForEmail, leaderboard);
+      if (result.success) sent++;
+      else failed++;
+      await new Promise(r => setTimeout(r, 600)); // Resend rate limit
+    }
+
+    res.json({ message: `Results emails sent: ${sent} succeeded, ${failed} failed`, sent, failed });
+  } catch (error) {
+    console.error('Error resending results emails:', error);
+    res.status(500).json({ error: 'Failed to resend results emails', details: error.message });
   }
 });
 

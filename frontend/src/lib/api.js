@@ -549,6 +549,13 @@ export async function triggerNotificationCheck() {
   return data;
 }
 
+export async function resendResultsEmail(raceId) {
+  const res = await fetch(`${API_URL}/api/notifications/resend-results/${raceId}`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to resend results emails');
+  return data;
+}
+
 // ============================================
 // FETCH RACE RESULTS FROM OPENF1
 // ============================================

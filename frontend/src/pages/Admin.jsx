@@ -16,7 +16,8 @@ import {
   getRaceLeaderboard,
   sendPaymentConfirmationEmail,
   autoFetchRaceResults,
-  setUserPin
+  setUserPin,
+  resendResultsEmail
 } from '../lib/api';
 
 function Admin() {
@@ -905,6 +906,35 @@ function Admin() {
                     className="btn-secondary w-full"
                   >
                     {actionLoading ? 'Calculating...' : 'Recalculate Scores'}
+                  </button>
+                </div>
+              )}
+
+              {/* Resend Results Email */}
+              {raceResult && (
+                <div className="card">
+                  <h3 className="font-semibold mb-2">Resend Results Email</h3>
+                  <p className="text-sm text-gray-400 mb-3">
+                    Resend the results email to all participants for this race.
+                  </p>
+                  <button
+                    onClick={async () => {
+                      setActionLoading(true);
+                      setMessage(null);
+                      const raceId = `${new Date(selectedRace.date).getFullYear()}_${selectedRace.round}`;
+                      try {
+                        const result = await resendResultsEmail(raceId);
+                        setMessage({ type: 'success', text: result.message });
+                      } catch (error) {
+                        setMessage({ type: 'error', text: error.message || 'Failed to resend results emails' });
+                      } finally {
+                        setActionLoading(false);
+                      }
+                    }}
+                    disabled={actionLoading}
+                    className="btn-secondary w-full"
+                  >
+                    {actionLoading ? 'Sending...' : '✉️ Resend Results Email'}
                   </button>
                 </div>
               )}
