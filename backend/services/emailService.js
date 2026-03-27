@@ -131,13 +131,76 @@ async function send(to, subject, html) {
 }
 
 // ─────────────────────────────────────────
-// Email 1: Qualifying reminder (1 hr before)
+// Email 1a: Qualifying reminder (1 day before)
+// ─────────────────────────────────────────
+
+export async function sendQualifyingDayBeforeReminder(user, race) {
+  if (!user.email) return { success: false, error: 'No email address' };
+
+  const appUrl = process.env.APP_URL || 'https://www.f1game.us';
+  const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
+
+  const body = `
+<p style="margin:0 0 6px 0;font-size:20px;font-weight:700;color:#ffffff;">Hey ${user.emoji} ${user.name}! 📅</p>
+<p style="margin:0 0 28px 0;font-size:15px;color:#aaa;line-height:1.6;">
+  Qualifying is <strong style="color:#e10600;">tomorrow</strong> — get your predictions in before the grid locks!
+  Once qualifying starts, no more changes.
+</p>
+
+${raceBox(race)}
+${timingRow('Qualifying — Predictions lock at', race.qualifyingDate, race.qualifyingTime)}
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+  <tr>
+    <td style="background:#1a1a2e;border-radius:10px;padding:18px 20px;">
+      <p style="margin:0 0 12px 0;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:#888;">Points up for grabs</p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;">🥇 P1 / P2 / P3 exact</td>
+          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">15 pts each</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;">🎖️ Podium pick, wrong spot</td>
+          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">10 pts</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;">🎯 P4–P10 exact</td>
+          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">5 pts (−1 per pos off)</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;">⚡ Fastest Lap + 🏁 Pole</td>
+          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">5 pts each</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;">🚩 Red Flag + 🚗 Safety Car</td>
+          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">8 / 5 pts</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+${ctaButton('Make My Predictions →', `${appUrl}/predict/${raceId}`)}
+
+<p style="margin:20px 0 0 0;font-size:12px;color:#555;text-align:center;">
+  You'll get another reminder 1 hour before qualifying starts.
+</p>`;
+
+  return send(
+    user.email,
+    `📅 ${user.name}, qualifying for ${race.raceName} is tomorrow — predictions close soon!`,
+    layout(body)
+  );
+}
+
+// ─────────────────────────────────────────
+// Email 1b: Qualifying reminder (1 hr before)
 // ─────────────────────────────────────────
 
 export async function sendQualifyingReminder(user, race) {
   if (!user.email) return { success: false, error: 'No email address' };
 
-  const appUrl = process.env.APP_URL || 'http://localhost:5173';
+  const appUrl = process.env.APP_URL || 'https://www.f1game.us';
   const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
 
   const body = `
@@ -250,7 +313,7 @@ ${potPaidCount > 0 ? potBadge(prizePool) : ''}
 export async function sendPaymentConfirmation(email, name, emoji = '👤', raceName, prizePool) {
   if (!email) return { success: false, error: 'No email address' };
 
-  const appUrl = process.env.APP_URL || 'http://localhost:5173';
+  const appUrl = process.env.APP_URL || 'https://www.f1game.us';
 
   const body = `
 <p style="margin:0 0 6px 0;font-size:20px;font-weight:700;color:#ffffff;">You're in the pot, ${emoji} ${name}! 💰</p>
@@ -318,7 +381,7 @@ ${ctaButton('View This Week\'s Predictions →', appUrl)}
 export async function sendResultsEmail(user, race, leaderboard) {
   if (!user.email) return { success: false, error: 'No email address' };
 
-  const appUrl = process.env.APP_URL || 'http://localhost:5173';
+  const appUrl = process.env.APP_URL || 'https://www.f1game.us';
   const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
 
   // Build leaderboard rows
@@ -387,10 +450,16 @@ export async function sendTestEmail(email, name = 'there') {
       <p style="margin:0 0 14px 0;font-size:13px;font-weight:600;color:#fff;">You'll automatically receive:</p>
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
+          <td style="padding:6px 0;font-size:14px;color:#aaa;">📅 <strong style="color:#fff;">1 day before qualifying</strong></td>
+        </tr>
+        <tr>
+          <td style="padding:2px 0 6px 40px;font-size:12px;color:#666;">Early reminder to get your predictions in</td>
+        </tr>
+        <tr>
           <td style="padding:6px 0;font-size:14px;color:#aaa;">⏰ <strong style="color:#fff;">1 hour before qualifying</strong></td>
         </tr>
         <tr>
-          <td style="padding:2px 0 6px 40px;font-size:12px;color:#666;">Reminder to lock in your predictions before they close</td>
+          <td style="padding:2px 0 6px 40px;font-size:12px;color:#666;">Final reminder — predictions lock when qualifying starts</td>
         </tr>
         <tr>
           <td style="padding:6px 0;font-size:14px;color:#aaa;">🏎️ <strong style="color:#fff;">2 hours before the race</strong></td>
@@ -424,4 +493,4 @@ export async function sendTestEmail(email, name = 'there') {
   );
 }
 
-export default { sendQualifyingReminder, sendRaceReminder, sendPaymentConfirmation, sendResultsEmail, sendTestEmail };
+export default { sendQualifyingReminder, sendQualifyingDayBeforeReminder, sendRaceReminder, sendPaymentConfirmation, sendResultsEmail, sendTestEmail };

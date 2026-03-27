@@ -1,14 +1,15 @@
 import cron from 'node-cron';
 import axios from 'axios';
 import supabase from '../db/supabase.js';
-import { sendQualifyingReminder, sendRaceReminder } from './emailService.js';
+import { sendQualifyingReminder, sendQualifyingDayBeforeReminder, sendRaceReminder } from './emailService.js';
 import { races2026, formatRace } from '../data/races2026.js';
 import { PARTICIPANT_EMAILS } from '../data/participants.js';
 
 const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
 
-const QUALIFYING_REMIND_MINUTES = 60;  // Send 1 hr before qualifying
-const RACE_REMIND_MINUTES = 120;       // Send 2 hrs before race
+const QUALIFYING_DAY_BEFORE_MINUTES = 1440; // Send 1 day before qualifying
+const QUALIFYING_1HR_MINUTES = 60;          // Send 1 hr before qualifying
+const RACE_REMIND_MINUTES = 120;            // Send 2 hrs before race
 
 // ─────────────────────────────────────────
 // Helpers
@@ -109,25 +110,42 @@ async function checkQualifyingReminders() {
 
     let qualifyingTime = getEstimatedQualifyingTime(race);
     const daysUntilRace = (new Date(`${race.date}T${race.time}`) - now) / 86400000;
-    if (daysUntilRace <= 2) {
+    if (daysUntilRace <= 3) {
       const live = await getQualifyingSessionTime(2026, race.round);
       if (live) qualifyingTime = live;
     }
 
     const minutesUntil = (qualifyingTime - now) / 60000;
-    if (minutesUntil <= 0 || minutesUntil > QUALIFYING_REMIND_MINUTES) continue;
-
-    console.log(`[Notification] Qualifying for ${race.name} in ${Math.round(minutesUntil)} min — sending reminders`);
+    if (minutesUntil <= 0 || minutesUntil > QUALIFYING_DAY_BEFORE_MINUTES) continue;
 
     const users = await getNotifiableUsers();
-    for (const user of users) {
-      const alreadySent = await wasNotificationSent(user.id, raceId, 'qualifying');
-      if (alreadySent) continue;
 
-      const result = await sendQualifyingReminder(user, formatted);
-      await logNotification(user.id, raceId, 'qualifying',
-        result.success ? 'sent' : 'failed', result.error);
-      await new Promise(r => setTimeout(r, 600)); // Resend rate limit: 2 req/sec
+    // Day-before reminder (within 24 hrs, not yet sent)
+    if (minutesUntil > QUALIFYING_1HR_MINUTES) {
+      console.log(`[Notification] Qualifying for ${race.name} in ~${Math.round(minutesUntil / 60)}h — sending day-before reminders`);
+      for (const user of users) {
+        const alreadySent = await wasNotificationSent(user.id, raceId, 'qualifying_day_before');
+        if (alreadySent) continue;
+
+        const result = await sendQualifyingDayBeforeReminder(user, formatted);
+        await logNotification(user.id, raceId, 'qualifying_day_before',
+          result.success ? 'sent' : 'failed', result.error);
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+
+    // 1-hour reminder (within 1 hr, not yet sent)
+    if (minutesUntil <= QUALIFYING_1HR_MINUTES) {
+      console.log(`[Notification] Qualifying for ${race.name} in ${Math.round(minutesUntil)} min — sending 1hr reminders`);
+      for (const user of users) {
+        const alreadySent = await wasNotificationSent(user.id, raceId, 'qualifying_1hr');
+        if (alreadySent) continue;
+
+        const result = await sendQualifyingReminder(user, formatted);
+        await logNotification(user.id, raceId, 'qualifying_1hr',
+          result.success ? 'sent' : 'failed', result.error);
+        await new Promise(r => setTimeout(r, 600));
+      }
     }
   }
 }
