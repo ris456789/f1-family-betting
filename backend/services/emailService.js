@@ -7,6 +7,7 @@ function getResend() {
   return _resend;
 }
 const FROM_EMAIL = () => process.env.FROM_EMAIL || 'F1 Family Betting <onboarding@resend.dev>';
+const APP_URL = 'https://www.f1game.us';
 
 // ─────────────────────────────────────────
 // Layout helpers
@@ -137,7 +138,7 @@ async function send(to, subject, html) {
 export async function sendQualifyingDayBeforeReminder(user, race) {
   if (!user.email) return { success: false, error: 'No email address' };
 
-  const appUrl = process.env.APP_URL || 'https://www.f1game.us';
+  const appUrl = APP_URL;
   const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
 
   const body = `
@@ -200,7 +201,7 @@ ${ctaButton('Make My Predictions →', `${appUrl}/predict/${raceId}`)}
 export async function sendQualifyingReminder(user, race) {
   if (!user.email) return { success: false, error: 'No email address' };
 
-  const appUrl = process.env.APP_URL || 'https://www.f1game.us';
+  const appUrl = APP_URL;
   const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
 
   const body = `
@@ -313,7 +314,7 @@ ${potPaidCount > 0 ? potBadge(prizePool) : ''}
 export async function sendPaymentConfirmation(email, name, emoji = '👤', raceName, prizePool) {
   if (!email) return { success: false, error: 'No email address' };
 
-  const appUrl = process.env.APP_URL || 'https://www.f1game.us';
+  const appUrl = APP_URL;
 
   const body = `
 <p style="margin:0 0 6px 0;font-size:20px;font-weight:700;color:#ffffff;">You're in the pot, ${emoji} ${name}! 💰</p>
@@ -381,7 +382,7 @@ ${ctaButton('View This Week\'s Predictions →', appUrl)}
 export async function sendResultsEmail(user, race, leaderboard) {
   if (!user.email) return { success: false, error: 'No email address' };
 
-  const appUrl = process.env.APP_URL || 'https://www.f1game.us';
+  const appUrl = APP_URL;
   const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
 
   // Build leaderboard rows
