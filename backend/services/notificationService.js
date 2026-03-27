@@ -70,7 +70,7 @@ async function wasNotificationSent(userId, raceId, type) {
 
 async function logNotification(userId, raceId, type, status, errorMessage = null) {
   if (!supabase) return;
-  await supabase.from('notification_log').upsert({
+  const { error: logErr } = await supabase.from('notification_log').upsert({
     user_id: userId,
     race_id: raceId,
     notification_type: type,
@@ -78,6 +78,7 @@ async function logNotification(userId, raceId, type, status, errorMessage = null
     error_message: errorMessage,
     sent_at: new Date().toISOString()
   }, { onConflict: 'user_id,race_id,notification_type' });
+  if (logErr) console.error(`[Notification] Failed to log ${type} for ${userId}:`, logErr.message);
 }
 
 async function getPotPaidCount(raceId) {
@@ -124,11 +125,11 @@ async function checkQualifyingReminders() {
     if (minutesUntil > QUALIFYING_1HR_MINUTES) {
       console.log(`[Notification] Qualifying for ${race.name} in ~${Math.round(minutesUntil / 60)}h — sending day-before reminders`);
       for (const user of users) {
-        const alreadySent = await wasNotificationSent(user.id, raceId, 'qualifying_day_before');
+        const alreadySent = await wasNotificationSent(user.id, raceId, 'qualifying_day_b4');
         if (alreadySent) continue;
 
         const result = await sendQualifyingDayBeforeReminder(user, formatted);
-        await logNotification(user.id, raceId, 'qualifying_day_before',
+        await logNotification(user.id, raceId, 'qualifying_day_b4',
           result.success ? 'sent' : 'failed', result.error);
         await new Promise(r => setTimeout(r, 600));
       }
