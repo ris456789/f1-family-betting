@@ -4,9 +4,6 @@ import {
   getRaces,
   getDrivers,
   getRaceResult,
-  fetchRaceResultsFromAPI,
-  updateRaceResultManualData,
-  calculateAndSaveScores,
   sendTestEmailToUser,
   triggerNotificationCheck,
   getRacePot,
@@ -16,6 +13,8 @@ import {
   getRaceLeaderboard,
   sendPaymentConfirmationEmail,
   autoFetchRaceResults,
+  saveManualResults,
+  calculateScoresOnBackend,
   setUserPin,
   resendResultsEmail
 } from '../lib/api';
@@ -30,9 +29,16 @@ function Admin() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState(null);
-  const [manualInputs, setManualInputs] = useState({
+  const emptyResultForm = () => ({
+    top10: Array(10).fill(''),
+    polePosition: '',
+    fastestLap: '',
+    redFlag: false,
+    dnfDrivers: [],
     driverOfTheDay: ''
   });
+  const [resultForm, setResultForm] = useState(emptyResultForm());
+  const [scoresCalculated, setScoresCalculated] = useState(false);
   // Pot state
   const [pot, setPot] = useState(null);
   const [potRace, setPotRace] = useState(null);
@@ -86,40 +92,38 @@ function Admin() {
     try {
       const result = await getRaceResult(raceId);
       setRaceResult(result);
+      setScoresCalculated(false);
       if (result) {
-        setManualInputs({
+        const top10 = result.top_10 || [];
+        setResultForm({
+          top10: [...top10, ...Array(10).fill('')].slice(0, 10),
+          polePosition: result.pole_position || '',
+          fastestLap: result.fastest_lap || '',
+          redFlag: result.red_flag ?? false,
+          dnfDrivers: result.dnf_drivers || [],
           driverOfTheDay: result.driver_of_the_day || ''
         });
       } else {
-        setManualInputs({ driverOfTheDay: '' });
+        setResultForm(emptyResultForm());
       }
     } catch (error) {
       setRaceResult(null);
-      setManualInputs({ safetyCar: false, redFlag: false, driverOfTheDay: '' });
+      setResultForm(emptyResultForm());
     }
   };
 
   const fetchResults = async () => {
     if (!selectedRace) return;
-
     setActionLoading(true);
     setMessage(null);
-
     const raceId = `${new Date(selectedRace.date).getFullYear()}_${selectedRace.round}`;
-
     try {
       const result = await autoFetchRaceResults(raceId);
       if (result.fetched) {
-        setMessage({
-          type: 'success',
-          text: `Results fetched & scores calculated for ${result.scored} prediction(s)! Refresh to see results.`
-        });
+        setMessage({ type: 'success', text: 'Results fetched! Review below and save when correct.' });
         fetchRaceResult(selectedRace);
       } else {
-        setMessage({
-          type: 'error',
-          text: result.message || 'Results not available from OpenF1 yet. Try again after the race finishes.'
-        });
+        setMessage({ type: 'error', text: result.message || 'Results not available yet — try after the race finishes.' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: error.message || 'Failed to fetch results' });
@@ -128,23 +132,26 @@ function Admin() {
     }
   };
 
-  const updateManualData = async () => {
-    if (!selectedRace || !raceResult) return;
-
+  const saveResults = async () => {
+    if (!selectedRace) return;
     setActionLoading(true);
     setMessage(null);
-
     const raceId = `${new Date(selectedRace.date).getFullYear()}_${selectedRace.round}`;
-
     try {
-      await updateRaceResultManualData(raceId, {
-        driver_of_the_day: manualInputs.driverOfTheDay || null
+      const top10 = resultForm.top10.filter(Boolean);
+      await saveManualResults(raceId, {
+        race_name: selectedRace.raceName,
+        top_10: top10,
+        pole_position: resultForm.polePosition || null,
+        fastest_lap: resultForm.fastestLap || null,
+        red_flag: resultForm.redFlag,
+        dnf_drivers: resultForm.dnfDrivers,
+        driver_of_the_day: resultForm.driverOfTheDay || null
       });
-
-      setMessage({ type: 'success', text: 'Race data updated!' });
+      setMessage({ type: 'success', text: 'Results saved! Now calculate scores.' });
       fetchRaceResult(selectedRace);
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update race data' });
+      setMessage({ type: 'error', text: error.message || 'Failed to save results' });
     } finally {
       setActionLoading(false);
     }
@@ -152,23 +159,15 @@ function Admin() {
 
   const calculateScores = async () => {
     if (!selectedRace) return;
-
     setActionLoading(true);
     setMessage(null);
-
     const raceId = `${new Date(selectedRace.date).getFullYear()}_${selectedRace.round}`;
-
     try {
-      const result = await calculateAndSaveScores(raceId);
-      setMessage({
-        type: 'success',
-        text: `Scores calculated for ${result.scoresCalculated} predictions!`
-      });
+      const result = await calculateScoresOnBackend(raceId);
+      setScoresCalculated(true);
+      setMessage({ type: 'success', text: `Scores calculated for ${result.scored} prediction(s)! Send email when ready.` });
     } catch (error) {
-      setMessage({
-        type: 'error',
-        text: error.message || 'Failed to calculate scores'
-      });
+      setMessage({ type: 'error', text: error.message || 'Failed to calculate scores' });
     } finally {
       setActionLoading(false);
     }
@@ -777,146 +776,158 @@ function Admin() {
         </div>
       )}
 
-      {activeTab === 'races' && <div className="grid md:grid-cols-2 gap-6">
-        {/* Race Selection */}
-        <div className="card">
-          <h2 className="text-lg font-semibold mb-4">Select Race</h2>
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
-            {races.map((race) => (
-              <button
-                key={race.round}
-                onClick={() => setSelectedRace(race)}
-                className={`w-full text-left p-3 rounded-lg transition-colors ${
-                  selectedRace?.round === race.round
-                    ? 'bg-f1-red text-white'
-                    : 'bg-f1-dark hover:bg-gray-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-medium">R{race.round}: {race.raceName}</span>
-                    <p className="text-sm opacity-75">{race.date}</p>
-                  </div>
-                  {isPastRace(race) ? (
-                    <span className="text-xs bg-gray-700 px-2 py-1 rounded">Past</span>
-                  ) : (
-                    <span className="text-xs bg-green-700 px-2 py-1 rounded">Upcoming</span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="space-y-4">
-          {selectedRace ? (
-            <>
-              <div className="card">
-                <h2 className="text-lg font-semibold mb-4">
-                  {selectedRace.raceName}
-                </h2>
-
-                {/* Fetch Results Button */}
+      {activeTab === 'races' && (
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Race Selection */}
+          <div className="card">
+            <h2 className="text-lg font-semibold mb-4">Select Race</h2>
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {races.map((race) => (
                 <button
-                  onClick={fetchResults}
-                  disabled={actionLoading || !isPastRace(selectedRace)}
-                  className="btn-primary w-full mb-4 disabled:opacity-50"
+                  key={race.round}
+                  onClick={() => setSelectedRace(race)}
+                  className={`w-full text-left p-3 rounded-lg transition-colors ${
+                    selectedRace?.round === race.round ? 'bg-f1-red text-white' : 'bg-f1-dark hover:bg-gray-700'
+                  }`}
                 >
-                  {actionLoading ? 'Fetching from OpenF1...' : '⚡ Auto-Fetch Results & Score'}
-                </button>
-                <p className="text-xs text-gray-500 mb-4">
-                  {isPastRace(selectedRace)
-                    ? 'Pulls results from OpenF1 + Wikipedia and calculates all scores automatically.'
-                    : 'Race hasn\'t happened yet.'}
-                </p>
-
-                {/* Result Status */}
-                {raceResult && (
-                  <div className="bg-f1-dark p-4 rounded-lg mb-4">
-                    <h3 className="font-semibold mb-2">Current Results</h3>
-                    <div className="grid grid-cols-3 gap-2 text-sm mb-4">
-                      <div>
-                        <span className="text-gray-400">P1:</span>
-                        <span className="ml-2">{raceResult.p1 || 'N/A'}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">P2:</span>
-                        <span className="ml-2">{raceResult.p2 || 'N/A'}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">P3:</span>
-                        <span className="ml-2">{raceResult.p3 || 'N/A'}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-gray-400">
-                      Created: {new Date(raceResult.fetched_at).toLocaleString()}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Manual Data Entry */}
-              {raceResult && (
-                <div className="card">
-                  <h3 className="font-semibold mb-4">Manual Data Entry</h3>
-                  <p className="text-sm text-gray-400 mb-4">
-                    Enter race data that needs to be filled in manually:
-                  </p>
-
-                  <div className="space-y-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <label className="block text-sm text-gray-400 mb-1">Driver of the Day</label>
+                      <span className="font-medium text-sm">R{race.round}: {race.raceName}</span>
+                      <p className="text-xs opacity-75">{race.date}</p>
+                    </div>
+                    {raceResult && selectedRace?.round === race.round
+                      ? <span className="text-xs bg-green-700 px-2 py-1 rounded">Results ✓</span>
+                      : isPastRace(race)
+                        ? <span className="text-xs bg-gray-700 px-2 py-1 rounded">Past</span>
+                        : <span className="text-xs bg-blue-700 px-2 py-1 rounded">Upcoming</span>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Results Form */}
+          {selectedRace ? (
+            <div className="md:col-span-2 space-y-4">
+              <div className="card">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">{selectedRace.raceName}</h2>
+                  <button
+                    onClick={fetchResults}
+                    disabled={actionLoading || !isPastRace(selectedRace)}
+                    className="btn-secondary text-sm disabled:opacity-50"
+                  >
+                    {actionLoading ? '...' : '⚡ Fetch from API'}
+                  </button>
+                </div>
+                {!isPastRace(selectedRace) && (
+                  <p className="text-xs text-gray-500 mb-2">Race hasn't happened yet — you can still pre-fill manually.</p>
+                )}
+
+                {/* Top 10 */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-gray-300 mb-2">Top 10 Finishers</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {resultForm.top10.map((val, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className={`text-xs w-5 text-right font-bold shrink-0 ${i < 3 ? 'text-yellow-400' : 'text-gray-500'}`}>P{i + 1}</span>
+                        <select
+                          value={val}
+                          onChange={(e) => {
+                            const updated = [...resultForm.top10];
+                            updated[i] = e.target.value;
+                            setResultForm(p => ({ ...p, top10: updated }));
+                          }}
+                          className="select flex-1 text-sm py-1"
+                        >
+                          <option value="">—</option>
+                          {drivers.map(d => (
+                            <option key={d.driverId} value={d.driverId}>{d.name} ({d.code})</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pole / Fastest Lap / DOTD */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                  {[
+                    { label: '🏁 Pole Position', key: 'polePosition' },
+                    { label: '⚡ Fastest Lap', key: 'fastestLap' },
+                    { label: '⭐ Driver of the Day', key: 'driverOfTheDay' },
+                  ].map(({ label, key }) => (
+                    <div key={key}>
+                      <label className="block text-xs text-gray-400 mb-1">{label}</label>
                       <select
-                        value={manualInputs.driverOfTheDay}
-                        onChange={(e) => setManualInputs(p => ({ ...p, driverOfTheDay: e.target.value }))}
-                        className="select w-full"
+                        value={resultForm[key]}
+                        onChange={(e) => setResultForm(p => ({ ...p, [key]: e.target.value }))}
+                        className="select w-full text-sm py-1"
                       >
-                        <option value="">Select driver...</option>
-                        {drivers.map(driver => (
-                          <option key={driver.driverId} value={driver.driverId}>
-                            {driver.name} ({driver.code})
-                          </option>
+                        <option value="">—</option>
+                        {drivers.map(d => (
+                          <option key={d.driverId} value={d.driverId}>{d.name} ({d.code})</option>
                         ))}
                       </select>
                     </div>
+                  ))}
+                </div>
 
+                {/* Red Flag + DNF */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  <div className="flex items-center justify-between p-3 bg-f1-dark rounded-lg">
+                    <span className="text-sm font-medium">🚩 Red Flag</span>
                     <button
-                      onClick={updateManualData}
-                      disabled={actionLoading}
-                      className="btn-secondary w-full"
+                      type="button"
+                      onClick={() => setResultForm(p => ({ ...p, redFlag: !p.redFlag }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${resultForm.redFlag ? 'bg-f1-red' : 'bg-gray-600'}`}
                     >
-                      Save Manual Data
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${resultForm.redFlag ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">💥 DNF Drivers</label>
+                    <select
+                      multiple
+                      value={resultForm.dnfDrivers}
+                      onChange={(e) => setResultForm(p => ({ ...p, dnfDrivers: Array.from(e.target.selectedOptions, o => o.value) }))}
+                      className="select w-full text-sm"
+                      size={4}
+                    >
+                      {drivers.map(d => (
+                        <option key={d.driverId} value={d.driverId}>{d.name} ({d.code})</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Ctrl/Cmd+click to select multiple</p>
+                  </div>
                 </div>
-              )}
 
-              {/* Recalculate Scores (manual override) */}
+                {/* Save Results */}
+                <button
+                  onClick={saveResults}
+                  disabled={actionLoading}
+                  className="btn-primary w-full disabled:opacity-50"
+                >
+                  {actionLoading ? 'Saving...' : '💾 Save Results'}
+                </button>
+              </div>
+
+              {/* Step 2: Calculate Scores */}
               {raceResult && (
                 <div className="card">
-                  <h3 className="font-semibold mb-2">Recalculate Scores</h3>
-                  <p className="text-sm text-gray-400 mb-3">
-                    Use this after manually editing safety car / red flag / DOTD data above.
-                  </p>
-                  <button
-                    onClick={calculateScores}
-                    disabled={actionLoading}
-                    className="btn-secondary w-full"
-                  >
-                    {actionLoading ? 'Calculating...' : 'Recalculate Scores'}
+                  <h3 className="font-semibold mb-1">Calculate Scores</h3>
+                  <p className="text-xs text-gray-400 mb-3">Run after saving results. Reviews all predictions and assigns points.</p>
+                  <button onClick={calculateScores} disabled={actionLoading} className="btn-secondary w-full disabled:opacity-50">
+                    {actionLoading ? 'Calculating...' : '🧮 Calculate Scores'}
                   </button>
                 </div>
               )}
 
-              {/* Resend Results Email */}
+              {/* Step 3: Send Email */}
               {raceResult && (
                 <div className="card">
-                  <h3 className="font-semibold mb-2">Resend Results Email</h3>
-                  <p className="text-sm text-gray-400 mb-3">
-                    Resend the results email to all participants for this race.
-                  </p>
+                  <h3 className="font-semibold mb-1">Send Results Email</h3>
+                  <p className="text-xs text-gray-400 mb-3">Only send once you're happy with the results and scores.</p>
                   <button
                     onClick={async () => {
                       setActionLoading(true);
@@ -926,26 +937,27 @@ function Admin() {
                         const result = await resendResultsEmail(raceId);
                         setMessage({ type: 'success', text: result.message });
                       } catch (error) {
-                        setMessage({ type: 'error', text: error.message || 'Failed to resend results emails' });
+                        setMessage({ type: 'error', text: error.message || 'Failed to send results emails' });
                       } finally {
                         setActionLoading(false);
                       }
                     }}
                     disabled={actionLoading}
-                    className="btn-secondary w-full"
+                    className="btn-secondary w-full disabled:opacity-50"
                   >
-                    {actionLoading ? 'Sending...' : '✉️ Resend Results Email'}
+                    {actionLoading ? 'Sending...' : '✉️ Send Results Email'}
                   </button>
                 </div>
               )}
-            </>
+            </div>
           ) : (
-            <div className="card text-center py-8">
+            <div className="md:col-span-2 card text-center py-12">
+              <p className="text-3xl mb-2">🏁</p>
               <p className="text-gray-400">Select a race to manage results</p>
             </div>
           )}
         </div>
-      </div>}
+      )}
     </div>
   );
 }

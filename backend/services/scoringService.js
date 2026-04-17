@@ -4,15 +4,13 @@
 export const POINTS = {
   EXACT_PODIUM: 15,      // P1, P2, or P3 — exact position
   PODIUM_IN_TOP3: 10,    // Picked for podium, in top 3 but wrong spot
-  FASTEST_LAP: 5,
-  POLE_POSITION: 5,
+  FASTEST_LAP: 10,
+  POLE_POSITION: 10,
   TOP_10_EXACT: 5,       // P4–P10 exact position
   // P4–P10 proximity: max(0, 5 - abs(predicted - actual))
-  DNF_CORRECT: 5,
+  DNF_CORRECT: 10,
   DOTD: 5,
-  WINNING_MARGIN: 5,
-  SAFETY_CAR: 5,
-  RED_FLAG: 8
+  RED_FLAG: 5
 };
 
 /**
@@ -43,10 +41,8 @@ export function calculateScore(prediction, raceResult) {
     fastestLap: 0,
     polePosition: 0,
     dnf: 0,
-    safetyCar: 0,
     redFlag: 0,
     dotd: 0,
-    winningMargin: 0,
     total: 0
   };
 
@@ -99,21 +95,6 @@ export function calculateScore(prediction, raceResult) {
     breakdown.dotd = POINTS.DOTD;
   }
 
-  // Winning Margin
-  if (prediction.winningMarginBracket && raceResult.winningMargin !== null) {
-    const actualBracket = getMarginBracket(raceResult.winningMargin);
-    if (actualBracket && prediction.winningMarginBracket === actualBracket.label) {
-      breakdown.winningMargin = POINTS.WINNING_MARGIN;
-    }
-  }
-
-  // Safety Car
-  if (raceResult.safetyCar !== null && raceResult.safetyCar !== undefined) {
-    if (!!prediction.safetyCar === !!raceResult.safetyCar) {
-      breakdown.safetyCar = POINTS.SAFETY_CAR;
-    }
-  }
-
   // Red Flag
   if (raceResult.redFlag !== null && raceResult.redFlag !== undefined) {
     if (!!prediction.redFlag === !!raceResult.redFlag) {
@@ -123,8 +104,7 @@ export function calculateScore(prediction, raceResult) {
 
   // Total
   breakdown.total = breakdown.podium + breakdown.top_10 + breakdown.fastestLap +
-    breakdown.polePosition + breakdown.dnf + breakdown.safetyCar +
-    breakdown.redFlag + breakdown.dotd + breakdown.winningMargin;
+    breakdown.polePosition + breakdown.dnf + breakdown.redFlag + breakdown.dotd;
 
   return breakdown;
 }

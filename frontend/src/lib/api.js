@@ -316,12 +316,13 @@ export async function getCompletedRaces(year = new Date().getFullYear()) {
 const POINTS = {
   EXACT_PODIUM: 15,
   PODIUM_IN_TOP3: 10,
-  FASTEST_LAP: 5,
-  POLE_POSITION: 5,
+  FASTEST_LAP: 10,
+  POLE_POSITION: 10,
   TOP_10_EXACT: 5,
-  DNF_CORRECT: 5,
+  DNF_CORRECT: 10,
   DOTD: 5,
-  WINNING_MARGIN: 5
+  WINNING_MARGIN: 5,
+  RED_FLAG: 5
 };
 
 export function getWinningMarginBracket(seconds) {
@@ -387,6 +388,12 @@ export function calculateScore(prediction, result) {
     if (resultDnf.includes(driver)) dnfPoints += POINTS.DNF_CORRECT;
   });
   if (dnfPoints > 0) { breakdown.dnf = dnfPoints; total += dnfPoints; }
+
+  // Red flag: 8 pts
+  if (result.red_flag != null && !!prediction.red_flag === !!result.red_flag) {
+    breakdown.red_flag = POINTS.RED_FLAG;
+    total += POINTS.RED_FLAG;
+  }
 
   // Driver of the Day
   if (prediction.driver_of_the_day && prediction.driver_of_the_day === result.driver_of_the_day) {
@@ -550,6 +557,24 @@ export async function autoFetchRaceResults(raceId) {
   const res = await fetch(`${API_URL}/api/results/${raceId}/auto-fetch`, { method: 'POST' });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Auto-fetch failed');
+  return data;
+}
+
+export async function saveManualResults(raceId, results) {
+  const res = await fetch(`${API_URL}/api/results/${raceId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(results)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to save results');
+  return data;
+}
+
+export async function calculateScoresOnBackend(raceId) {
+  const res = await fetch(`${API_URL}/api/results/${raceId}/calculate-scores`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to calculate scores');
   return data;
 }
 

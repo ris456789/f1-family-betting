@@ -15,7 +15,6 @@ import scoringRoutes from './routes/scoring.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import notificationsRoutes from './routes/notifications.js';
 import { startNotificationScheduler } from './services/notificationService.js';
-import { startRaceResultsScheduler } from './services/raceResultsScheduler.js';
 
 dotenv.config({ path: join(__dirname, '.env') });
 
@@ -66,8 +65,4 @@ app.listen(PORT, () => {
     startNotificationScheduler();
   }
 
-  // Start the race results auto-fetcher
-  if (process.env.ENABLE_AUTO_RESULTS !== 'false') {
-    startRaceResultsScheduler();
-  }
 });

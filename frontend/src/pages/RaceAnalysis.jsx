@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
-import { getCompletedRaces, getRaceAnalysis, getWinningMarginBracket } from '../lib/api';
+import { getCompletedRaces, getRaceAnalysis } from '../lib/api';
 import DriverAvatar from '../components/DriverAvatar';
 
 // ─── Points badge ────────────────────────────────────────────────────────────
@@ -26,10 +26,6 @@ function PtsBadge({ pts, show = true }) {
 function ActualResultPanel({ result }) {
   const top10 = result.top_10 || [];
   const podiumColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
-
-  const marginBracket = result.winning_margin != null
-    ? getWinningMarginBracket(result.winning_margin)
-    : null;
 
   return (
     <div className="card space-y-5">
@@ -72,21 +68,9 @@ function ActualResultPanel({ result }) {
             : <span className="text-gray-500">—</span>}
         </div>
         <div className="bg-f1-dark rounded-lg p-3">
-          <p className="text-xs text-gray-400 mb-1">🚗 Safety Car</p>
-          <span className={result.safety_car ? 'text-yellow-400 font-semibold' : 'text-gray-400'}>
-            {result.safety_car ? 'Yes' : 'No'}
-          </span>
-        </div>
-        <div className="bg-f1-dark rounded-lg p-3">
           <p className="text-xs text-gray-400 mb-1">🚩 Red Flag</p>
           <span className={result.red_flag ? 'text-f1-red font-semibold' : 'text-gray-400'}>
             {result.red_flag ? 'Yes' : 'No'}
-          </span>
-        </div>
-        <div className="bg-f1-dark rounded-lg p-3">
-          <p className="text-xs text-gray-400 mb-1">⏱ Winning Margin</p>
-          <span className="text-white">
-            {marginBracket || (result.winning_margin != null ? `${result.winning_margin.toFixed(1)}s` : '—')}
           </span>
         </div>
       </div>
@@ -104,10 +88,6 @@ function PlayerAnalysisCard({ player, result, rank, isCurrentUser }) {
   const actualTop10 = result.top_10 || [];
   const predTop10 = player.top_10 || [];
   const actualPodium = actualTop10.slice(0, 3);
-
-  const marginBracket = result.winning_margin != null
-    ? getWinningMarginBracket(result.winning_margin)
-    : null;
 
   const medals = ['🥇', '🥈', '🥉'];
   const rankColors = [
@@ -211,6 +191,15 @@ function PlayerAnalysisCard({ player, result, rank, isCurrentUser }) {
             pts={player.fastest_lap && player.fastest_lap === result.fastest_lap ? 5 : 0}
           />
 
+          {/* Red flag */}
+          <BonusRow
+            label="🚩 Red Flag"
+            predicted={<span className={player.red_flag ? 'text-f1-red' : 'text-gray-400'}>{player.red_flag ? 'Yes' : 'No'}</span>}
+            actual={<span className={result.red_flag ? 'text-f1-red' : 'text-gray-400'}>{result.red_flag ? 'Yes' : 'No'}</span>}
+            correct={result.red_flag != null && !!player.red_flag === !!result.red_flag}
+            pts={result.red_flag != null && !!player.red_flag === !!result.red_flag ? 5 : 0}
+          />
+
           {/* Driver of the day */}
           <BonusRow
             label="⭐ DOTD"
@@ -220,32 +209,6 @@ function PlayerAnalysisCard({ player, result, rank, isCurrentUser }) {
             pts={player.driver_of_the_day && player.driver_of_the_day === result.driver_of_the_day ? 5 : 0}
           />
 
-          {/* Safety car */}
-          <BonusRow
-            label="🚗 Safety Car"
-            predicted={<span className={player.safety_car ? 'text-yellow-400' : 'text-gray-400'}>{player.safety_car ? 'Yes' : 'No'}</span>}
-            actual={<span className={result.safety_car ? 'text-yellow-400' : 'text-gray-400'}>{result.safety_car ? 'Yes' : 'No'}</span>}
-            correct={result.safety_car != null && !!player.safety_car === !!result.safety_car}
-            pts={result.safety_car != null && !!player.safety_car === !!result.safety_car ? 5 : 0}
-          />
-
-          {/* Red flag */}
-          <BonusRow
-            label="🚩 Red Flag"
-            predicted={<span className={player.red_flag ? 'text-f1-red' : 'text-gray-400'}>{player.red_flag ? 'Yes' : 'No'}</span>}
-            actual={<span className={result.red_flag ? 'text-f1-red' : 'text-gray-400'}>{result.red_flag ? 'Yes' : 'No'}</span>}
-            correct={result.red_flag != null && !!player.red_flag === !!result.red_flag}
-            pts={result.red_flag != null && !!player.red_flag === !!result.red_flag ? 8 : 0}
-          />
-
-          {/* Winning margin */}
-          <BonusRow
-            label="⏱ Margin"
-            predicted={<span className="text-white">{player.winning_margin_bracket || '—'}</span>}
-            actual={<span className="text-white">{marginBracket || '—'}</span>}
-            correct={player.winning_margin_bracket && marginBracket && player.winning_margin_bracket === marginBracket}
-            pts={player.winning_margin_bracket && marginBracket && player.winning_margin_bracket === marginBracket ? 5 : 0}
-          />
         </div>
       </div>
 

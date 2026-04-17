@@ -9,6 +9,7 @@ function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = fals
     p3: '',
     top10: [],
     fastestLap: '',
+    polePosition: '',
     dnfDrivers: [],
     safetyCar: false,
     redFlag: false,
@@ -195,8 +196,18 @@ function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = fals
         </h3>
         <div className="grid md:grid-cols-2 gap-4">
           <DriverSelect label="Fastest Lap" field="fastestLap" />
+          <DriverSelect label="Pole Position" field="polePosition" />
           <DriverSelect label="Driver of the Day" field="driverOfTheDay" />
         </div>
+      </div>
+
+      {/* Race Events */}
+      <div className="card">
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <span className="text-2xl mr-2">🚩</span>
+          Race Events
+        </h3>
+        <Toggle label="Red Flag" field="redFlag" description="Will there be a red flag during the race? (+8 pts)" />
       </div>
 
       {/* DNF Predictions */}
@@ -209,8 +220,8 @@ function PredictionForm({ drivers, initialValues = {}, onSubmit, isLocked = fals
           drivers={drivers}
           value={formData.dnfDrivers}
           onChange={(value) => handleChange('dnfDrivers', value)}
-          maxSelections={5}
-          label="Who will retire from the race? (up to 5)"
+          maxSelections={1}
+          label="Who will retire from the race?"
         />
       </div>
 

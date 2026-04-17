@@ -58,16 +58,6 @@ function PredictionCard({ prediction, isCurrentUser }) {
             : <span className="text-gray-500">—</span>}
         </div>
         <div>
-          <p className="text-xs text-gray-400 mb-1">Winning Margin</p>
-          <span className="text-white">{prediction.winning_margin_bracket || '—'}</span>
-        </div>
-        <div>
-          <p className="text-xs text-gray-400 mb-1">Safety Car</p>
-          <span className={prediction.safety_car ? 'text-yellow-400 font-semibold' : 'text-gray-400'}>
-            {prediction.safety_car ? 'Yes' : 'No'}
-          </span>
-        </div>
-        <div>
           <p className="text-xs text-gray-400 mb-1">Red Flag</p>
           <span className={prediction.red_flag ? 'text-f1-red font-semibold' : 'text-gray-400'}>
             {prediction.red_flag ? 'Yes' : 'No'}

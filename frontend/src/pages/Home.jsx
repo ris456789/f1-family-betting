@@ -312,11 +312,11 @@ function Home() {
             { label: 'Podium Exact (P1/2/3)', points: 15, icon: '🥇', note: 'per pick' },
             { label: 'Podium, Wrong Spot', points: 10, icon: '🎖️', note: 'in top 3' },
             { label: 'P4–P10 Exact', points: 5, icon: '🎯', note: '−1 per pos off' },
-            { label: 'Fastest Lap', points: 5, icon: '⚡' },
-            { label: 'Pole Position', points: 5, icon: '🏁' },
-            { label: 'Red Flag', points: 8, icon: '🚩' },
-            { label: 'Safety Car', points: 5, icon: '🚗' },
-            { label: 'DNF Correct', points: 5, icon: '💀', note: 'per driver' },
+            { label: 'Fastest Lap', points: 10, icon: '⚡' },
+            { label: 'Pole Position', points: 10, icon: '🏁' },
+            { label: 'DNF Correct', points: 10, icon: '💀' },
+            { label: 'Driver of the Day', points: 5, icon: '⭐' },
+            { label: 'Red Flag', points: 5, icon: '🚩' },
           ].map((item) => (
             <div
               key={item.label}

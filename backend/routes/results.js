@@ -3,7 +3,7 @@ import supabase from '../db/supabase.js';
 import ergastService from '../services/ergastService.js';
 import scrapingService from '../services/scrapingService.js';
 import { transformRaceResults } from '../services/scoringService.js';
-import { triggerResultsFetch } from '../services/raceResultsScheduler.js';
+import { triggerResultsFetch, triggerScoreCalculation } from '../services/raceResultsScheduler.js';
 
 const router = express.Router();
 
@@ -141,49 +141,52 @@ router.post('/:raceId/auto-fetch', async (req, res) => {
   }
 });
 
-// PUT /api/results/:raceId - Manually update results (for fields scraping missed)
+// PUT /api/results/:raceId - Save full manual results
 router.put('/:raceId', async (req, res) => {
   try {
     const { raceId } = req.params;
-    const updates = req.body;
+    const body = req.body;
+    const [year, round] = raceId.split('_');
 
-    // Only allow updating specific fields manually
-    const allowedFields = ['safety_car', 'red_flag', 'driver_of_the_day', 'winning_margin'];
-    const filteredUpdates = {};
-
-    for (const field of allowedFields) {
-      if (updates[field] !== undefined) {
-        filteredUpdates[field] = updates[field];
-      }
-    }
-
-    if (Object.keys(filteredUpdates).length === 0) {
-      return res.status(400).json({ error: 'No valid fields to update' });
-    }
-
-    filteredUpdates.updated_at = new Date().toISOString();
-
-    if (!supabase) {
-      const index = mockResults.findIndex(r => r.race_id === raceId);
-      if (index >= 0) {
-        mockResults[index] = { ...mockResults[index], ...filteredUpdates };
-        return res.json(mockResults[index]);
-      }
-      return res.status(404).json({ error: 'Results not found' });
-    }
+    const result = {
+      race_id: raceId,
+      race_year: parseInt(year),
+      race_round: parseInt(round),
+      race_name: body.race_name || null,
+      p1: body.top_10?.[0] || null,
+      p2: body.top_10?.[1] || null,
+      p3: body.top_10?.[2] || null,
+      top_10: body.top_10 || [],
+      pole_position: body.pole_position || null,
+      fastest_lap: body.fastest_lap || null,
+      red_flag: body.red_flag ?? false,
+      dnf_drivers: body.dnf_drivers || [],
+      driver_of_the_day: body.driver_of_the_day || null,
+      updated_at: new Date().toISOString()
+    };
 
     const { data, error } = await supabase
       .from('race_results')
-      .update(filteredUpdates)
-      .eq('race_id', raceId)
+      .upsert(result, { onConflict: 'race_id' })
       .select()
       .single();
 
     if (error) throw error;
     res.json(data);
   } catch (error) {
-    console.error('Error updating results:', error);
-    res.status(500).json({ error: 'Failed to update results' });
+    console.error('Error saving manual results:', error);
+    res.status(500).json({ error: 'Failed to save results' });
+  }
+});
+
+// POST /api/results/:raceId/calculate-scores - Calculate scores for a race
+router.post('/:raceId/calculate-scores', async (req, res) => {
+  try {
+    const { raceId } = req.params;
+    const result = await triggerScoreCalculation(raceId);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to calculate scores' });
   }
 });
 
