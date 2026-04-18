@@ -169,19 +169,19 @@ ${timingRow('Qualifying — Predictions lock at', race.qualifyingDate, race.qual
           <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">5 pts (−1 per pos off)</td>
         </tr>
         <tr>
-          <td style="padding:4px 0;font-size:13px;color:#ccc;">⚡ Fastest Lap + 🏁 Pole</td>
-          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">5 pts each</td>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;">⚡ Fastest Lap / 🏁 Pole / 💀 DNF</td>
+          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">10 pts each</td>
         </tr>
         <tr>
-          <td style="padding:4px 0;font-size:13px;color:#ccc;">🚩 Red Flag + 🚗 Safety Car</td>
-          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">8 / 5 pts</td>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;">⭐ Driver of the Day / 🚩 Red Flag</td>
+          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">5 pts each</td>
         </tr>
       </table>
     </td>
   </tr>
 </table>
 
-${ctaButton('Make My Predictions →', `${appUrl}/predict/${raceId}`)}
+${ctaButton('Make My Predictions →', appUrl)}
 
 <p style="margin:20px 0 0 0;font-size:12px;color:#555;text-align:center;">
   You'll get another reminder 1 hour before qualifying starts.
@@ -232,19 +232,19 @@ ${timingRow('Qualifying — Predictions lock at', race.qualifyingDate, race.qual
           <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">5 pts (−1 per pos off)</td>
         </tr>
         <tr>
-          <td style="padding:4px 0;font-size:13px;color:#ccc;">⚡ Fastest Lap + 🏁 Pole</td>
-          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">5 pts each</td>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;">⚡ Fastest Lap / 🏁 Pole / 💀 DNF</td>
+          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">10 pts each</td>
         </tr>
         <tr>
-          <td style="padding:4px 0;font-size:13px;color:#ccc;">🚩 Red Flag + 🚗 Safety Car</td>
-          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">8 / 5 pts</td>
+          <td style="padding:4px 0;font-size:13px;color:#ccc;">⭐ Driver of the Day / 🚩 Red Flag</td>
+          <td align="right" style="font-size:13px;color:#e10600;font-weight:700;">5 pts each</td>
         </tr>
       </table>
     </td>
   </tr>
 </table>
 
-${ctaButton('Lock In My Predictions →', `${appUrl}/predict/${raceId}`)}
+${ctaButton('Lock In My Predictions →', appUrl)}
 
 <p style="margin:20px 0 0 0;font-size:12px;color:#555;text-align:center;">
   Predictions auto-lock when qualifying begins. No extensions!
@@ -425,7 +425,7 @@ ${userScore ? `
   </tr>
 </table>` : ''}
 
-${ctaButton('View Full Results →', `${appUrl}/history`)}`;
+${ctaButton('View Full Results →', appUrl)}`;
 
   return send(
     user.email,
