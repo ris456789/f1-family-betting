@@ -249,4 +249,4 @@ export async function triggerScoreCalculation(raceId) {
   return { scored };
 }
 
-export default { startRaceResultsScheduler, triggerResultsFetch };
+export default { triggerResultsFetch, triggerScoreCalculation };
