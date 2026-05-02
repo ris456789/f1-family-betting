@@ -1,5 +1,5 @@
 import express from 'express';
-import { sendTestEmail, sendPaymentConfirmation, sendResultsEmail } from '../services/emailService.js';
+import { sendTestEmail, sendPaymentConfirmation, sendResultsEmail, sendQualifyingDayBeforeReminder } from '../services/emailService.js';
 import { triggerNotificationCheck, getNotificationStatus } from '../services/notificationService.js';
 import supabase from '../db/supabase.js';
 import { races2026 } from '../data/races2026.js';
@@ -119,6 +119,40 @@ router.post('/resend-results/:raceId', async (req, res) => {
   } catch (error) {
     console.error('Error resending results emails:', error);
     res.status(500).json({ error: 'Failed to resend results emails', details: error.message });
+  }
+});
+
+// POST /api/notifications/qualifying-blast/:round - Immediately blast qualifying reminder to all users
+router.post('/qualifying-blast/:round', async (req, res) => {
+  try {
+    const round = parseInt(req.params.round);
+    const race = races2026.find(r => r.round === round);
+    if (!race) return res.status(404).json({ error: `Round ${round} not found` });
+
+    const raceForEmail = { ...race, raceName: race.name, circuitName: race.circuit };
+
+    let dbUsers = [];
+    if (supabase) {
+      const { data } = await supabase.from('users').select('*');
+      dbUsers = data || [];
+    }
+    const users = PARTICIPANT_EMAILS.map(email => {
+      const dbUser = dbUsers.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      return dbUser ? { ...dbUser, email } : { id: email, name: email.split('@')[0], emoji: '👤', email };
+    });
+
+    let sent = 0, failed = 0;
+    for (const user of users) {
+      const result = await sendQualifyingDayBeforeReminder(user, raceForEmail);
+      if (result.success) sent++;
+      else failed++;
+      await new Promise(r => setTimeout(r, 600));
+    }
+
+    res.json({ message: `Qualifying blast: ${sent} sent, ${failed} failed`, sent, failed });
+  } catch (error) {
+    console.error('Error sending qualifying blast:', error);
+    res.status(500).json({ error: 'Failed to send qualifying blast', details: error.message });
   }
 });
 

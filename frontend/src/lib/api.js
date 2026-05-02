@@ -596,6 +596,13 @@ export async function triggerNotificationCheck() {
   return data;
 }
 
+export async function blastQualifyingReminder(round) {
+  const res = await fetch(`${API_URL}/api/notifications/qualifying-blast/${round}`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to send qualifying blast');
+  return data;
+}
+
 export async function resendResultsEmail(raceId) {
   const res = await fetch(`${API_URL}/api/notifications/resend-results/${raceId}`, { method: 'POST' });
   const data = await res.json();

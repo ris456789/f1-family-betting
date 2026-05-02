@@ -16,7 +16,8 @@ import {
   saveManualResults,
   calculateScoresOnBackend,
   setUserPin,
-  resendResultsEmail
+  resendResultsEmail,
+  blastQualifyingReminder
 } from '../lib/api';
 
 function Admin() {
@@ -317,6 +318,20 @@ function Admin() {
       setMessage({ type: 'success', text: 'Notification check triggered!' });
     } catch (err) {
       setMessage({ type: 'error', text: err.message || 'Failed to trigger notifications' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBlastMiamiQualifying = async () => {
+    if (!window.confirm('Send qualifying reminder email to ALL participants for Miami GP right now?')) return;
+    setActionLoading(true);
+    setMessage(null);
+    try {
+      const result = await blastQualifyingReminder(4);
+      setMessage({ type: 'success', text: `Miami blast sent! ${result.sent} emails sent, ${result.failed} failed.` });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Failed to send blast' });
     } finally {
       setActionLoading(false);
     }
@@ -769,6 +784,21 @@ function Admin() {
                   className="btn-primary w-full"
                 >
                   {actionLoading ? 'Running...' : '🔔 Trigger Notification Check'}
+                </button>
+              </div>
+
+              {/* Miami Qualifying Blast */}
+              <div className="card border border-f1-red/30">
+                <h3 className="font-semibold mb-1">🏖️ Miami GP — Blast Now</h3>
+                <p className="text-sm text-gray-400 mb-3">
+                  Send qualifying reminder to all 9 participants right now. Lock deadline: Sat May 2 @ 6pm PDT.
+                </p>
+                <button
+                  onClick={handleBlastMiamiQualifying}
+                  disabled={actionLoading}
+                  className="btn-primary w-full bg-f1-red hover:bg-red-700"
+                >
+                  {actionLoading ? 'Sending...' : '🚀 Send Miami Qualifying Reminder Now'}
                 </button>
               </div>
             </div>
