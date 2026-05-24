@@ -4,8 +4,8 @@
 export const POINTS = {
   EXACT_PODIUM: 15,      // P1, P2, or P3 — exact position
   PODIUM_IN_TOP3: 10,    // Picked for podium, in top 3 but wrong spot
-  FASTEST_LAP: 10,
-  POLE_POSITION: 10,
+  FASTEST_LAP: 5,
+  POLE_POSITION: 5,
   TOP_10_EXACT: 5,       // P4–P10 exact position
   // P4–P10 proximity: max(0, 5 - abs(predicted - actual))
   DNF_CORRECT: 10,
@@ -73,12 +73,12 @@ export function calculateScore(prediction, raceResult) {
     breakdown.top_10 += pts;
   }
 
-  // Fastest Lap: 5 pts
+  // Fastest Lap
   if (prediction.fastestLap && prediction.fastestLap === raceResult.fastestLap) {
     breakdown.fastestLap = POINTS.FASTEST_LAP;
   }
 
-  // Pole Position: 5 pts
+  // Pole Position
   if (prediction.polePosition && prediction.polePosition === raceResult.polePosition) {
     breakdown.polePosition = POINTS.POLE_POSITION;
   }
