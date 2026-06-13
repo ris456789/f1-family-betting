@@ -8,7 +8,7 @@ export const races2026 = [
   { round: 4,  name: "Miami Grand Prix",          circuit: "Miami International Autodrome",  country: "USA",          date: "2026-05-03", time: "20:00:00Z", qualifyingDate: "2026-05-02", qualifyingTime: "20:00:00Z" },
   { round: 5,  name: "Canadian Grand Prix",       circuit: "Circuit Gilles Villeneuve",      country: "Canada",       date: "2026-05-24", time: "19:00:00Z", qualifyingDate: "2026-05-22", qualifyingTime: "19:00:00Z" },
   { round: 6,  name: "Monaco Grand Prix",         circuit: "Circuit de Monaco",              country: "Monaco",       date: "2026-06-07", time: "13:00:00Z", qualifyingDate: "2026-06-06", qualifyingTime: "13:00:00Z" },
-  { round: 7,  name: "Spanish Grand Prix",        circuit: "Circuit de Barcelona-Catalunya", country: "Spain",        date: "2026-06-14", time: "13:00:00Z", qualifyingDate: "2026-06-13", qualifyingTime: "13:00:00Z" },
+  { round: 7,  name: "Spanish Grand Prix",        circuit: "Circuit de Barcelona-Catalunya", country: "Spain",        date: "2026-06-14", time: "13:00:00Z", qualifyingDate: "2026-06-13", qualifyingTime: "13:29:00Z" },
   { round: 8,  name: "Austrian Grand Prix",       circuit: "Red Bull Ring",                  country: "Austria",      date: "2026-06-28", time: "13:00:00Z", qualifyingDate: "2026-06-27", qualifyingTime: "13:00:00Z" },
   { round: 9,  name: "British Grand Prix",        circuit: "Silverstone Circuit",            country: "UK",           date: "2026-07-05", time: "14:00:00Z", qualifyingDate: "2026-07-03", qualifyingTime: "14:00:00Z" },
   { round: 10, name: "Belgian Grand Prix",        circuit: "Circuit de Spa-Francorchamps",   country: "Belgium",      date: "2026-07-19", time: "13:00:00Z", qualifyingDate: "2026-07-18", qualifyingTime: "13:00:00Z" },
