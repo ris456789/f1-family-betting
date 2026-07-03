@@ -10,7 +10,7 @@ export const races2026 = [
   { round: 6,  name: "Monaco Grand Prix",         circuit: "Circuit de Monaco",              country: "Monaco",       date: "2026-06-07", time: "13:00:00Z", qualifyingDate: "2026-06-06", qualifyingTime: "13:00:00Z" },
   { round: 7,  name: "Spanish Grand Prix",        circuit: "Circuit de Barcelona-Catalunya", country: "Spain",        date: "2026-06-14", time: "13:00:00Z", qualifyingDate: "2026-06-13", qualifyingTime: "14:02:00Z" },
   { round: 8,  name: "Austrian Grand Prix",       circuit: "Red Bull Ring",                  country: "Austria",      date: "2026-06-28", time: "13:00:00Z", qualifyingDate: "2026-06-27", qualifyingTime: "13:00:00Z" },
-  { round: 9,  name: "British Grand Prix",        circuit: "Silverstone Circuit",            country: "UK",           date: "2026-07-05", time: "14:00:00Z", qualifyingDate: "2026-07-03", qualifyingTime: "14:00:00Z" },
+  { round: 9,  name: "British Grand Prix",        circuit: "Silverstone Circuit",            country: "UK",           date: "2026-07-05", time: "14:00:00Z", qualifyingDate: "2026-07-04", qualifyingTime: "16:00:00Z" },
   { round: 10, name: "Belgian Grand Prix",        circuit: "Circuit de Spa-Francorchamps",   country: "Belgium",      date: "2026-07-19", time: "13:00:00Z", qualifyingDate: "2026-07-18", qualifyingTime: "13:00:00Z" },
   { round: 11, name: "Hungarian Grand Prix",      circuit: "Hungaroring",                    country: "Hungary",      date: "2026-07-26", time: "13:00:00Z", qualifyingDate: "2026-07-25", qualifyingTime: "13:00:00Z" },
   { round: 12, name: "Dutch Grand Prix",          circuit: "Circuit Zandvoort",              country: "Netherlands",  date: "2026-08-23", time: "13:00:00Z", qualifyingDate: "2026-08-21", qualifyingTime: "13:00:00Z" },
