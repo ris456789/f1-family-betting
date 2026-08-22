@@ -91,6 +91,9 @@ function Admin() {
   const fetchRaceResult = async (race) => {
     const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
     try {
+      // Refresh driver list for this race's round (applies race-day substitutions)
+      setDrivers(getDrivers(race.round));
+
       const result = await getRaceResult(raceId);
       setRaceResult(result);
       setScoresCalculated(false);

@@ -37,8 +37,8 @@ function Predict() {
       const raceData = races.find(r => r.round === parseInt(round));
       setRace(raceData);
 
-      // Get drivers from local data
-      const driversData = getDrivers();
+      // Get drivers from local data (applies race-day substitutions, e.g. injury call-ups)
+      const driversData = getDrivers(parseInt(round));
       setDrivers(driversData);
 
       // Check for existing prediction in Supabase

@@ -69,3 +69,26 @@ export function getTeamById(teamId) {
 export function getAllDrivers() {
   return drivers2026;
 }
+
+// One-off race-day substitutions (injury/reserve call-ups) that don't change
+// the season-long roster. Keyed by race round.
+const raceDaySubstitutions = {
+  12: { // Dutch GP — Hadjar out (wrist injury), Lawson up to Red Bull, Tsunoda covers at Racing Bulls
+    remove: ["hadjar"],
+    teamOverrides: { lawson: { team: "Red Bull", teamId: "redbull", teamColor: "#3671C6" } },
+    add: [
+      { code: "TSU", driverId: "tsunoda", name: "Yuki Tsunoda", team: "Racing Bulls", teamId: "racingbulls", teamColor: "#6692FF", number: 22, headshot: "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/Y/YUKTSU01_Yuki_Tsunoda/yuktsu01.png.transform/1col/image.png" }
+    ]
+  }
+};
+
+export function getDriversForRound(round) {
+  const sub = raceDaySubstitutions[round];
+  if (!sub) return drivers2026;
+
+  const filtered = drivers2026.filter(d => !sub.remove?.includes(d.driverId));
+  const withOverrides = filtered.map(d =>
+    sub.teamOverrides?.[d.driverId] ? { ...d, ...sub.teamOverrides[d.driverId] } : d
+  );
+  return [...withOverrides, ...(sub.add || [])];
+}

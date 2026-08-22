@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { races2026 } from '../data/races2026';
-import { drivers2026 } from '../data/drivers2026';
+import { drivers2026, getDriversForRound } from '../data/drivers2026';
 
 // ============================================
 // USERS
@@ -91,8 +91,9 @@ export function getNextRace() {
   return upcoming[0] ? normalizeRace(upcoming[0]) : null;
 }
 
-export function getDrivers() {
-  return drivers2026.map(d => ({
+export function getDrivers(round) {
+  const list = round ? getDriversForRound(round) : drivers2026;
+  return list.map(d => ({
     driverId: d.driverId,
     code: d.code,
     name: d.name,
