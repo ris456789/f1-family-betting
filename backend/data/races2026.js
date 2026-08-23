@@ -13,7 +13,7 @@ export const races2026 = [
   { round: 9,  name: "British Grand Prix",        circuit: "Silverstone Circuit",            country: "UK",           date: "2026-07-05", time: "14:00:00Z", qualifyingDate: "2026-07-04", qualifyingTime: "16:00:00Z" },
   { round: 10, name: "Belgian Grand Prix",        circuit: "Circuit de Spa-Francorchamps",   country: "Belgium",      date: "2026-07-19", time: "13:00:00Z", qualifyingDate: "2026-07-18", qualifyingTime: "13:00:00Z" },
   { round: 11, name: "Hungarian Grand Prix",      circuit: "Hungaroring",                    country: "Hungary",      date: "2026-07-26", time: "13:00:00Z", qualifyingDate: "2026-07-25", qualifyingTime: "13:00:00Z" },
-  { round: 12, name: "Dutch Grand Prix",          circuit: "Circuit Zandvoort",              country: "Netherlands",  date: "2026-08-23", time: "13:00:00Z", qualifyingDate: "2026-08-22", qualifyingTime: "14:00:00Z" },
+  { round: 12, name: "Dutch Grand Prix",          circuit: "Circuit Zandvoort",              country: "Netherlands",  date: "2026-08-23", time: "13:00:00Z", qualifyingDate: "2026-08-23", qualifyingTime: "15:41:00Z" },
   { round: 13, name: "Italian Grand Prix",        circuit: "Autodromo Nazionale Monza",      country: "Italy",        date: "2026-09-06", time: "13:00:00Z", qualifyingDate: "2026-09-05", qualifyingTime: "13:00:00Z" },
   { round: 14, name: "Madrid Grand Prix",         circuit: "Circuito de Madrid",             country: "Spain",        date: "2026-09-13", time: "13:00:00Z", qualifyingDate: "2026-09-12", qualifyingTime: "13:00:00Z" },
   { round: 15, name: "Azerbaijan Grand Prix",     circuit: "Baku City Circuit",              country: "Azerbaijan",   date: "2026-09-26", time: "11:00:00Z", qualifyingDate: "2026-09-25", qualifyingTime: "11:00:00Z" },
