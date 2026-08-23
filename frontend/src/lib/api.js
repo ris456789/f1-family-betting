@@ -85,7 +85,12 @@ export function getRaces(year = 2026) {
 export function getNextRace() {
   const now = new Date();
   const upcoming = races2026
-    .filter(r => new Date(`${r.date}T${r.time}`) > now)
+    .filter(r => {
+      const qualifyingDate = r.qualifyingDate
+        ? new Date(`${r.qualifyingDate}T${r.qualifyingTime || '14:00:00Z'}`)
+        : new Date(`${r.date}T${r.time || '14:00:00Z'}`);
+      return qualifyingDate > now;
+    })
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
   return upcoming[0] ? normalizeRace(upcoming[0]) : null;
