@@ -9,6 +9,7 @@ const __dirname = dirname(__filename);
 
 import usersRoutes from './routes/users.js';
 import racesRoutes from './routes/races.js';
+import raceLocksRoutes from './routes/raceLocks.js';
 import predictionsRoutes from './routes/predictions.js';
 import resultsRoutes from './routes/results.js';
 import scoringRoutes from './routes/scoring.js';
@@ -38,6 +39,7 @@ app.use(express.json());
 // Routes
 app.use('/api/users', usersRoutes);
 app.use('/api/races', racesRoutes);
+app.use('/api/race-locks', raceLocksRoutes);
 app.use('/api/predictions', predictionsRoutes);
 app.use('/api/results', resultsRoutes);
 app.use('/api/scoring', scoringRoutes);

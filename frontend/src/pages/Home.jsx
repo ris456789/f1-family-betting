@@ -5,7 +5,7 @@ import { heroImages, getCircuitImage, getCountryFlag } from '../data/f1Images';
 import { drivers2026 } from '../data/drivers2026';
 import CountdownTimer from '../components/CountdownTimer';
 import PotCard from '../components/PotCard';
-import { getNextRace, getLeaderboard } from '../lib/api';
+import { getNextRace, getLeaderboard, refreshRaceLocks } from '../lib/api';
 
 function Home() {
   const { currentUser } = useUser();
@@ -19,6 +19,9 @@ function Home() {
 
   const fetchData = async () => {
     try {
+      // Pick up any admin-set lock overrides before computing the next race
+      await refreshRaceLocks();
+
       // Get next race from local data
       const race = getNextRace();
       setNextRace(race);

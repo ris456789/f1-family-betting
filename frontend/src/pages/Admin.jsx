@@ -17,7 +17,11 @@ import {
   calculateScoresOnBackend,
   setUserPin,
   resendResultsEmail,
-  blastQualifyingReminder
+  blastQualifyingReminder,
+  refreshRaceLocks,
+  getRaceLockOverrides,
+  setRaceLock,
+  clearRaceLock
 } from '../lib/api';
 
 function Admin() {
@@ -58,6 +62,12 @@ function Admin() {
   const [newPin, setNewPin] = useState('');
   const [savingPin, setSavingPin] = useState(false);
 
+  // Prediction lock state
+  const [lockOverrides, setLockOverrides] = useState({});
+  const [lockActionLoading, setLockActionLoading] = useState(false);
+  const [lockMessage, setLockMessage] = useState(null);
+  const [customLockInput, setCustomLockInput] = useState('');
+
   useEffect(() => {
     fetchRaces();
   }, []);
@@ -70,6 +80,10 @@ function Admin() {
 
   const fetchRaces = async () => {
     try {
+      // Pick up any admin-set lock overrides before reading race data
+      const overrides = await refreshRaceLocks();
+      setLockOverrides(overrides);
+
       // Get races from local data
       const raceData = getRaces(2026);
       // Sort by date descending to show most recent first
@@ -178,6 +192,67 @@ function Admin() {
   };
 
   const isPastRace = (race) => new Date(race.date) < new Date();
+
+  const raceIdOf = (race) => `${new Date(race.date).getFullYear()}_${race.round}`;
+
+  // Prefill the custom lock time picker with the race's current effective lock time
+  useEffect(() => {
+    if (!selectedRace?.qualifyingDate) return;
+    const d = new Date(`${selectedRace.qualifyingDate}T${selectedRace.qualifyingTime || '14:00:00Z'}`);
+    const pad = n => String(n).padStart(2, '0');
+    setCustomLockInput(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+  }, [selectedRace]);
+
+  const applyLock = async (targetDate) => {
+    if (!selectedRace) return;
+    setLockActionLoading(true);
+    setLockMessage(null);
+    try {
+      const qualifyingDate = targetDate.toISOString().slice(0, 10);
+      const qualifyingTime = targetDate.toISOString().slice(11, 19) + 'Z';
+      const raceId = raceIdOf(selectedRace);
+      await setRaceLock(raceId, qualifyingDate, qualifyingTime);
+      const overrides = getRaceLockOverrides();
+      setLockOverrides(overrides);
+      const refreshedRaces = getRaces(2026);
+      setRaces([...refreshedRaces].sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setSelectedRace(refreshedRaces.find(r => r.round === selectedRace.round));
+      setLockMessage({ type: 'success', text: 'Lock time updated!' });
+    } catch (error) {
+      setLockMessage({ type: 'error', text: error.message || 'Failed to update lock time' });
+    } finally {
+      setLockActionLoading(false);
+    }
+  };
+
+  const handleReopenFor = (minutes) => applyLock(new Date(Date.now() + minutes * 60 * 1000));
+
+  const handleLockNow = () => applyLock(new Date(Date.now() - 1000));
+
+  const handleSetCustomLock = () => {
+    if (!customLockInput) return;
+    applyLock(new Date(customLockInput));
+  };
+
+  const handleResetLock = async () => {
+    if (!selectedRace) return;
+    setLockActionLoading(true);
+    setLockMessage(null);
+    try {
+      const raceId = raceIdOf(selectedRace);
+      await clearRaceLock(raceId);
+      const overrides = getRaceLockOverrides();
+      setLockOverrides(overrides);
+      const refreshedRaces = getRaces(2026);
+      setRaces([...refreshedRaces].sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setSelectedRace(refreshedRaces.find(r => r.round === selectedRace.round));
+      setLockMessage({ type: 'success', text: 'Reset to scheduled time!' });
+    } catch (error) {
+      setLockMessage({ type: 'error', text: error.message || 'Failed to reset lock time' });
+    } finally {
+      setLockActionLoading(false);
+    }
+  };
 
   const loadPotForRace = async (race) => {
     if (!race) return;
@@ -842,6 +917,89 @@ function Admin() {
           {/* Results Form */}
           {selectedRace ? (
             <div className="md:col-span-2 space-y-4">
+              {/* Prediction Lock Management */}
+              <div className="card border border-yellow-500/30">
+                <h3 className="font-semibold mb-3">🔒 Prediction Lock</h3>
+                {(() => {
+                  const raceId = raceIdOf(selectedRace);
+                  const hasOverride = !!lockOverrides[raceId];
+                  const qualDate = new Date(`${selectedRace.qualifyingDate}T${selectedRace.qualifyingTime || '14:00:00Z'}`);
+                  const isOpen = new Date() < qualDate;
+                  return (
+                    <>
+                      <p className="text-xs text-gray-400 mb-1">
+                        Predictions {isOpen ? 'lock' : 'locked'} at{' '}
+                        <span className="text-white font-medium">
+                          {qualDate.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}
+                        </span>
+                      </p>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${isOpen ? 'bg-green-700 text-green-200' : 'bg-gray-700 text-gray-300'}`}>
+                          {isOpen ? '🔓 Open for predictions' : '🔒 Locked'}
+                        </span>
+                        {hasOverride && (
+                          <span className="text-xs text-yellow-400">Custom override active</span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        {[10, 30, 60].map(mins => (
+                          <button
+                            key={mins}
+                            onClick={() => handleReopenFor(mins)}
+                            disabled={lockActionLoading}
+                            className="btn-secondary text-xs py-2 disabled:opacity-50"
+                          >
+                            Reopen {mins}m
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex gap-2 mb-3">
+                        <input
+                          type="datetime-local"
+                          value={customLockInput}
+                          onChange={e => setCustomLockInput(e.target.value)}
+                          className="input flex-1 text-sm"
+                        />
+                        <button
+                          onClick={handleSetCustomLock}
+                          disabled={lockActionLoading || !customLockInput}
+                          className="btn-primary text-sm px-3 disabled:opacity-50"
+                        >
+                          Set
+                        </button>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleLockNow}
+                          disabled={lockActionLoading}
+                          className="btn-secondary flex-1 text-sm disabled:opacity-50"
+                        >
+                          🔒 Lock Now
+                        </button>
+                        {hasOverride && (
+                          <button
+                            onClick={handleResetLock}
+                            disabled={lockActionLoading}
+                            className="btn-secondary flex-1 text-sm disabled:opacity-50"
+                          >
+                            Reset to Scheduled
+                          </button>
+                        )}
+                      </div>
+
+                      {lockMessage && (
+                        <p className={`text-xs mt-2 ${lockMessage.type === 'error' ? 'text-red-400' : 'text-green-400'}`}>
+                          {lockMessage.text}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+
               <div className="card">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold">{selectedRace.raceName}</h2>

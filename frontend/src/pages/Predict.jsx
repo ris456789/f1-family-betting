@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import PredictionForm from '../components/PredictionForm';
 import RaceCard from '../components/RaceCard';
-import { getRaces, getDrivers, getPredictions, savePrediction } from '../lib/api';
+import { getRaces, getDrivers, getPredictions, savePrediction, refreshRaceLocks } from '../lib/api';
 
 function Predict() {
   const { raceId } = useParams();
@@ -31,6 +31,9 @@ function Predict() {
   const fetchData = async () => {
     try {
       setLoading(true);
+
+      // Pick up any admin-set lock overrides before reading race data
+      await refreshRaceLocks();
 
       // Get race from local data
       const races = getRaces(parseInt(year));

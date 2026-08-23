@@ -2,6 +2,54 @@ import { supabase } from './supabase';
 import { races2026 } from '../data/races2026';
 import { drivers2026, getDriversForRound } from '../data/drivers2026';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+// ============================================
+// RACE LOCK OVERRIDES (admin-editable, from backend — lets the
+// qualifying lock/unlock time be changed without a code deploy)
+// ============================================
+
+let raceLockOverrides = {};
+
+export async function refreshRaceLocks() {
+  try {
+    const res = await fetch(`${API_URL}/api/race-locks`);
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      raceLockOverrides = Object.fromEntries(
+        data.map(l => [l.race_id, { qualifyingDate: l.qualifying_date, qualifyingTime: l.qualifying_time }])
+      );
+    }
+  } catch (error) {
+    console.error('Error fetching race locks:', error);
+  }
+  return raceLockOverrides;
+}
+
+export function getRaceLockOverrides() {
+  return raceLockOverrides;
+}
+
+export async function setRaceLock(raceId, qualifyingDate, qualifyingTime) {
+  const res = await fetch(`${API_URL}/api/race-locks/${raceId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ qualifyingDate, qualifyingTime })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to set race lock');
+  await refreshRaceLocks();
+  return data;
+}
+
+export async function clearRaceLock(raceId) {
+  const res = await fetch(`${API_URL}/api/race-locks/${raceId}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to clear race lock');
+  await refreshRaceLocks();
+  return data;
+}
+
 // ============================================
 // USERS
 // ============================================
@@ -69,10 +117,13 @@ export async function updateUser(userId, updates) {
 
 // Normalize race data to the shape expected by UI components
 function normalizeRace(race) {
+  const raceId = `${new Date(race.date).getFullYear()}_${race.round}`;
+  const override = raceLockOverrides[raceId];
   return {
     ...race,
     raceName: race.name,
     circuitName: race.circuit,
+    ...(override ? { qualifyingDate: override.qualifyingDate, qualifyingTime: override.qualifyingTime } : {})
   };
 }
 
@@ -545,8 +596,6 @@ export async function getSeasonPotSummary(year = new Date().getFullYear()) {
 // ============================================
 // NOTIFICATIONS / EMAIL (calls backend API)
 // ============================================
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export async function sendTestEmailToUser(email, name) {
   const res = await fetch(`${API_URL}/api/notifications/test`, {

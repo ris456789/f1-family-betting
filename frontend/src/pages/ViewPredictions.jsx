@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
-import { getPredictions } from '../lib/api';
+import { getPredictions, getRaces, refreshRaceLocks } from '../lib/api';
 import DriverAvatar from '../components/DriverAvatar';
-import { races2026 } from '../data/races2026';
 
 function PredictionCard({ prediction, isCurrentUser }) {
   const user = prediction.users || {};
@@ -82,22 +81,33 @@ function PredictionCard({ prediction, isCurrentUser }) {
 
 function ViewPredictions() {
   const { currentUser } = useUser();
+  const [races, setRaces] = useState([]);
+  const [racesLoaded, setRacesLoaded] = useState(false);
   const [selectedRaceId, setSelectedRaceId] = useState(null);
   const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Races where qualifying has already started (predictions are locked)
-  const lockedRaces = races2026.filter(r => {
+  const lockedRaces = races.filter(r => {
     const qualDate = new Date(`${r.qualifyingDate}T${r.qualifyingTime || '14:00:00Z'}`);
     return new Date() > qualDate;
   });
+
+  useEffect(() => {
+    (async () => {
+      // Pick up any admin-set lock overrides before reading race data
+      await refreshRaceLocks();
+      setRaces(getRaces(2026));
+      setRacesLoaded(true);
+    })();
+  }, []);
 
   useEffect(() => {
     if (lockedRaces.length > 0 && !selectedRaceId) {
       const latest = lockedRaces[lockedRaces.length - 1];
       setSelectedRaceId(`2026_${latest.round}`);
     }
-  }, []);
+  }, [races]);
 
   useEffect(() => {
     if (selectedRaceId) fetchPredictions();
@@ -117,6 +127,14 @@ function ViewPredictions() {
   };
 
   const selectedRace = lockedRaces.find(r => `2026_${r.round}` === selectedRaceId);
+
+  if (!racesLoaded) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-f1-red" />
+      </div>
+    );
+  }
 
   if (lockedRaces.length === 0) {
     return (
