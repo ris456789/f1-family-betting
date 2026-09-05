@@ -79,6 +79,13 @@ const raceDaySubstitutions = {
     add: [
       { code: "TSU", driverId: "tsunoda", name: "Yuki Tsunoda", firstName: "Yuki", lastName: "Tsunoda", team: "Racing Bulls", teamId: "racingbulls", number: 22 }
     ]
+  },
+  13: { // Italian GP — Hadjar still out (wrist injury), Lawson stays at Red Bull, Tsunoda continues at Racing Bulls
+    remove: ["hadjar"],
+    teamOverrides: { lawson: { team: "Red Bull", teamId: "redbull" } },
+    add: [
+      { code: "TSU", driverId: "tsunoda", name: "Yuki Tsunoda", firstName: "Yuki", lastName: "Tsunoda", team: "Racing Bulls", teamId: "racingbulls", number: 22 }
+    ]
   }
 };
 
