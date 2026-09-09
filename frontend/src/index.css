@@ -52,14 +52,23 @@ body {
 
   .input {
     @apply bg-f1-dark border border-gray-600 rounded px-3 py-2 text-white focus:border-f1-red focus:outline-none transition-all;
+    /* Render native pickers (date/time calendar icon, spinners) light so
+       they're visible on the dark field */
+    color-scheme: dark;
   }
 
   .input:focus {
     box-shadow: 0 0 0 3px rgba(225, 6, 0, 0.2);
   }
 
+  .input::-webkit-calendar-picker-indicator {
+    opacity: 0.75;
+    cursor: pointer;
+  }
+
   .select {
     @apply bg-f1-dark border border-gray-600 rounded px-3 py-2 text-white focus:border-f1-red focus:outline-none cursor-pointer transition-all;
+    color-scheme: dark;
   }
 }
 
