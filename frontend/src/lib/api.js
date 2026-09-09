@@ -13,8 +13,8 @@ let raceLockOverrides = {};
 
 export async function refreshRaceLocks() {
   try {
-    const res = await fetch(`${API_URL}/api/race-locks`);
-    const data = await res.json();
+    const { data, error } = await supabase.from('race_locks').select('*');
+    if (error) throw error;
     if (Array.isArray(data)) {
       raceLockOverrides = Object.fromEntries(
         data.map(l => [l.race_id, { qualifyingDate: l.qualifying_date, qualifyingTime: l.qualifying_time }])
@@ -31,23 +31,26 @@ export function getRaceLockOverrides() {
 }
 
 export async function setRaceLock(raceId, qualifyingDate, qualifyingTime) {
-  const res = await fetch(`${API_URL}/api/race-locks/${raceId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ qualifyingDate, qualifyingTime })
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to set race lock');
+  const { data, error } = await supabase
+    .from('race_locks')
+    .upsert({
+      race_id: raceId,
+      qualifying_date: qualifyingDate,
+      qualifying_time: qualifyingTime,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'race_id' })
+    .select()
+    .single();
+  if (error) throw error;
   await refreshRaceLocks();
   return data;
 }
 
 export async function clearRaceLock(raceId) {
-  const res = await fetch(`${API_URL}/api/race-locks/${raceId}`, { method: 'DELETE' });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to clear race lock');
+  const { error } = await supabase.from('race_locks').delete().eq('race_id', raceId);
+  if (error) throw error;
   await refreshRaceLocks();
-  return data;
+  return { message: 'Override cleared' };
 }
 
 // ============================================
