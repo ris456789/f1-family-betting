@@ -86,7 +86,15 @@ const raceDaySubstitutions = {
     add: [
       { code: "TSU", driverId: "tsunoda", name: "Yuki Tsunoda", firstName: "Yuki", lastName: "Tsunoda", team: "Racing Bulls", teamId: "racingbulls", number: 22 }
     ]
+  },
+  14: { // Madrid GP — Hadjar still out (wrist injury), Lawson stays at Red Bull, Tsunoda continues at Racing Bulls
+    remove: ["hadjar"],
+    teamOverrides: { lawson: { team: "Red Bull", teamId: "redbull" } },
+    add: [
+      { code: "TSU", driverId: "tsunoda", name: "Yuki Tsunoda", firstName: "Yuki", lastName: "Tsunoda", team: "Racing Bulls", teamId: "racingbulls", number: 22 }
+    ]
   }
+  // Hadjar returned to Red Bull at the Azerbaijan GP (round 15) — no substitution needed from here on
 };
 
 export function getDriversForRound(round) {

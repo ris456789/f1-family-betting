@@ -34,7 +34,8 @@ export const circuitImages = {
   brazil: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245032/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Brazil_Circuit.png",
   vegas: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245032/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Las_Vegas_Circuit.png",
   qatar: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245032/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Qatar_Circuit.png",
-  abudhabi: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245032/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Abu_Dhabi_Circuit.png"
+  abudhabi: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245032/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Abu_Dhabi_Circuit.png",
+  malaysia: "https://media.formula1.com/image/upload/f_auto/q_auto/v1677245032/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Malaysia_Circuit.png"
 };
 
 // Team Car Images
@@ -77,7 +78,8 @@ export function getCircuitImage(circuitName) {
     'Interlagos': 'brazil',
     'Las Vegas': 'vegas',
     'Lusail': 'qatar',
-    'Yas Marina': 'abudhabi'
+    'Yas Marina': 'abudhabi',
+    'Sepang': 'malaysia'
   };
 
   const key = circuitMap[circuitName] || 'australia';
@@ -106,7 +108,8 @@ export const countryFlags = {
   'Mexico': '🇲🇽',
   'Brazil': '🇧🇷',
   'Qatar': '🇶🇦',
-  'UAE': '🇦🇪'
+  'UAE': '🇦🇪',
+  'Malaysia': '🇲🇾'
 };
 
 export function getCountryFlag(country) {

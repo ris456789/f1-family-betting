@@ -1,4 +1,4 @@
-// 2026 F1 Race Calendar (updated — Bahrain & Saudi Arabia cancelled)
+// 2026 F1 Race Calendar (Saudi Arabia cancelled; Bahrain relocated to Sepang, Malaysia)
 export const races2026 = [
   // ── PAST RACES — do not change round numbers or race_ids ──
   { round: 1,  name: "Australian Grand Prix",      circuit: "Albert Park Circuit",             country: "Australia",    locality: "Melbourne",      date: "2026-03-08", time: "04:00:00Z", qualifyingDate: "2026-03-07", qualifyingTime: "19:00:00Z" },
@@ -24,6 +24,7 @@ export const races2026 = [
   { round: 20, name: "Las Vegas Grand Prix",        circuit: "Las Vegas Street Circuit",        country: "USA",          locality: "Las Vegas",      date: "2026-11-22", time: "06:00:00Z", qualifyingDate: "2026-11-21", qualifyingTime: "06:00:00Z" },
   { round: 21, name: "Qatar Grand Prix",            circuit: "Lusail International Circuit",    country: "Qatar",        locality: "Lusail",         date: "2026-11-29", time: "15:00:00Z", qualifyingDate: "2026-11-28", qualifyingTime: "15:00:00Z" },
   { round: 22, name: "Abu Dhabi Grand Prix",        circuit: "Yas Marina Circuit",              country: "UAE",          locality: "Abu Dhabi",      date: "2026-12-06", time: "13:00:00Z", qualifyingDate: "2026-12-05", qualifyingTime: "13:00:00Z" },
+  { round: 23, name: "Bahrain Grand Prix",          circuit: "Sepang International Circuit",    country: "Bahrain",      locality: "Sepang",         date: "2026-10-04", time: "07:00:00Z", qualifyingDate: "2026-10-03", qualifyingTime: "08:00:00Z" },
 ];
 
 export function getRaceByRound(round) {
