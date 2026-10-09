@@ -138,7 +138,9 @@ export function getRaces(year = 2026) {
 
 export function getNextRace() {
   const now = new Date();
+  // Normalize first so admin lock overrides decide which race is "next"
   const upcoming = races2026
+    .map(normalizeRace)
     .filter(r => {
       const qualifyingDate = r.qualifyingDate
         ? new Date(`${r.qualifyingDate}T${r.qualifyingTime || '14:00:00Z'}`)
@@ -147,7 +149,7 @@ export function getNextRace() {
     })
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  return upcoming[0] ? normalizeRace(upcoming[0]) : null;
+  return upcoming[0] || null;
 }
 
 export function getDrivers(round) {
